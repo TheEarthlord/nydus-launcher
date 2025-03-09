@@ -8,7 +8,7 @@ from nydus.common.MCAccount import MCAccount
 # This class is for keeping all that data in one place for one
 # account.
 
-class AccountAuthTokens
+class AccountAuthTokens:
     
     """
     ms_username: string, Microsoft account username (email address)

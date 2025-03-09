@@ -5,6 +5,7 @@ import ssl
 import random
 import datetime
 import threading
+import time
 from nydus.common.allocater import AllocEngine
 from nydus.server import ServerConfig
 from nydus.common import validity
@@ -164,7 +165,7 @@ def server_main(cfg, app):
         cleanup_thread = threading.Thread(target=alloc_utils.cleanup, args=(cfg, app, ALLOCDB_LOCK))
         cleanup_thread.start()
         
-        sleep(CLEANUP_PERIOD)
+        time.sleep(CLEANUP_PERIOD)
 
 def main():
     cfg = startup()

@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
 import ssl
+from nydus.client.StatusMsg import StatusMsg
 import socket
+import tkinter as tk
+from tkinter import ttk
+import threading
 from nydus.client import utils
-from nydus.client import ClientConfig
+from nydus.client.ClientConfig import ClientConfig
 
 MAXMSG = 1024
 
@@ -19,6 +23,81 @@ NETENC="utf-8"
 
 MSG_END = "\n"
 
+WINDOW_TITLE = "Nydus Launcher"
+
+# Used for tracking where we're up to in launching
+# Minecraft, so we can display status message boxes
+STATUS_MESSAGES = [
+    StatusMsg(1, "Requesting Minecraft credentials from Server"),
+    StatusMsg(2, "Launching Minecraft"),
+]
+
+STATUS = 0
+STATUS_LOCK = threading.Lock()
+
+# In milliseconds
+WINDOW_CHECK_PERIOD = 1000
+
+# This function is called by tkinter root widgets
+# to check if their status messages should still be
+# shown or if they should be destroyed.
+def check_window(root, msg_id):
+    assert isinstance(root, tk.Tk), "Must pass a tkinter root for to check its status"
+    assert isinstance(msg_id, int) and msg_id > 0, "Msg Id must be a positive integer"
+
+    with STATE_LOCK:
+
+        if STATE != msg_id:
+            root.destroy()
+
+        else:
+            root.after(CHECK_PERIOD, check_window, root, msg_id)
+
+
+def make_window(status_msg):
+    assert isinstance(status_msg, StatusMsg), "Must pass a StatusMsg instance to create a status window. Instead, got a {}".format(type(status_msg))
+    msg_text = status_msg.get_msg()
+    msg_id = status_msg.get_id()
+
+    root = tk.Tk(className=WINDOW_TITLE)
+    frame = ttk.Frame(root, padding=10)
+    frame.grid()
+    ttk.Label(frame, text=msg_text).grid(column=0, row=0)
+    root.after(CHECK_PERIOD, check_window, root, msg_id)
+
+    root.mainloop()
+
+"""
+We have a sequence of status messages (describing which
+stage of launching Minecraft we're up to) stored in the
+STATUS_MESSAGES global.
+They have sequentially incrementing message ids, starting
+at 1.
+So message in position x has id x+1.
+We create a window for a message. The window periodically
+checks the STATUS variable still matches its own id.
+If the STATUS variable becomes something else (i.e. when
+it advances to the next value) the existing status message
+window vanishes.
+Each time this function is called, STATUS is incremented,
+(as well as the next message window being created) so just
+call this function repeatedly to move through all the statuses.
+Calling it after all statuses are exhausted should be harmless,
+so the status messages will be gone when Minecraft actually
+launches.
+"""
+def next_status_window():
+    global STATUS
+
+    with STATUS_LOCK:
+        if STATUS < len(STATUS_MESSAGES):
+            next_msg = STATUS_MESSAGES[STATUS]
+            STATUS += 1
+            window_thread = threading.Thread(target=make_window, args=(next_msg,))
+            window_thread.start()
+        else:
+            STATUS += 1
+
 
 # Entry point of the nydus-launcher client.
 # Decide which Minecraft version to launch.
@@ -29,6 +108,8 @@ MSG_END = "\n"
 
 def request(ssock):
     
+    next_status_window()
+
     sys_username = utils.get_username()
     request_str = "{} {}\n".format(REQUEST_COMMAND, sys_username)
     request_data = request_str.encode(encoding=NETENC)
@@ -58,6 +139,8 @@ def request(ssock):
 
     ssock.close()
 
+    next_status_window()
+
     # Error to handle: some kind of form validity check for each data piece?
     mc_version = parts[0]
     mc_username = parts[1]
@@ -67,6 +150,8 @@ def request(ssock):
     print("Got Minecraft username {}".format(mc_username))
     print("Got Minecraft uuid {}".format(mc_uuid))
     print("Got auth token {}".format(mc_token))
+
+    next_status_window()
 
 
 def client_main(cfg):
