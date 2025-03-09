@@ -77,7 +77,7 @@ which requests a Minecraft account from the server and launches an instance
 of Minecraft. It does not require the nydus-common package to function.
 
 The nydus-test package has a variety of unit tests which it will run using
-other install Nydus Launcher packages.
+other installed Nydus Launcher packages.
 
 ## Requirements
 
