@@ -1,0 +1,13 @@
+[Unit]
+Description=Nydus Launcher Server
+Documentation=man:nydus-server(1)
+Wants=network.target
+After=network-pre.target local-fs.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/nydus-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
