@@ -7,7 +7,6 @@ After=network-pre.target local-fs.target
 [Service]
 Type=exec
 ExecStart=/usr/bin/nydus-server
-Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
