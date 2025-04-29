@@ -41,7 +41,7 @@ SERVER_VARNAMES = {
     IPADDR: "ip_addr",
     PORT: "port",
     CERTFILE: "cert_file",
-    CERT_PRIVKEY: "cert_privkey",
+    CERTPRIVKEY: "cert_privkey",
     MCVERSION: "mc_version",
     MSALCID: "msal_cid",
     ALLOCFILE: "alloc_file",
