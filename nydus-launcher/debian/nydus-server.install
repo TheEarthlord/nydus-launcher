@@ -1,4 +1,5 @@
 etc/nydus/nydus-server.conf
+etc/systemd/system/multi-user.target.wants/nydus-server.service
 usr/bin/nydus-server
 usr/lib/python3/dist-packages/nydus/server/ServerConfig.py
 usr/lib/systemd/system/nydus-server.service

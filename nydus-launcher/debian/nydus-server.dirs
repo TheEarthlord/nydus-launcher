@@ -1,4 +1,5 @@
 etc/nydus
+etc/systemd/system/multi-user.target.wants
 usr/bin
 usr/lib/python3/dist-packages/nydus/server
 usr/lib/systemd/system
