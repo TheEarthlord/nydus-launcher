@@ -3,7 +3,6 @@ usr/bin/nydus-client
 usr/lib/python3/dist-packages/nydus/client/ClientConfig.py
 usr/lib/python3/dist-packages/nydus/client/DownloadFile.py
 usr/lib/python3/dist-packages/nydus/client/error.py
-usr/lib/python3/dist-packages/nydus/client/loader.py
 usr/lib/python3/dist-packages/nydus/client/MCVersion.py
 usr/lib/python3/dist-packages/nydus/client/utils.py
 usr/share/man/man1/nydus-client.1
