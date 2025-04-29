@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+# Entry point of the nydus-launcher client.
+# Decide which Minecraft version to launch.
+# Use the json files under .minecraft to find all the jars we need.
+# Request an account from the server.
+# Launch Minecraft using those jars and account details.
+
 import ssl
 from nydus.client.StatusMsg import StatusMsg
 import socket
@@ -8,6 +14,9 @@ from tkinter import ttk
 import threading
 from nydus.client import utils
 from nydus.client.ClientConfig import ClientConfig
+from nydus.client.MCVersion import MCVersion
+from nydus.common.MCAccount import MCAccount
+from nydus.common import validity
 
 MAXMSG = 1024
 
@@ -99,13 +108,28 @@ def next_status_window():
             STATUS += 1
 
 
-# Entry point of the nydus-launcher client.
-# Decide which Minecraft version to launch.
-# Use the json files under .minecraft to find all the jars we need.
-# Request an account from the server.
-# Launch Minecraft using those jars and account details.
+"""
+After we close Minecraft, we establish another connection to
+the server. This function uses it to release the Minecraft
+account we were allocated.
+"""
+def release(ssock):
+
+    request_str = "{}\n".format(RELEASE_COMMAND)
+    request_data = request_str.encode(encoding=NETENC)
+    
+    total_sent = 0
+    while total_sent < len(request_data):
+        total_sent += ssock.send(request_data)
+
+    ssock.close()
 
 
+"""
+Once we've established connection with the server,
+this function requests a Minecraft account and starts
+the game.
+"""
 def request(ssock):
     
     next_status_window()
@@ -141,17 +165,26 @@ def request(ssock):
 
     next_status_window()
 
-    # Error to handle: some kind of form validity check for each data piece?
     mc_version = parts[0]
     mc_username = parts[1]
     mc_uuid = parts[2]
     mc_token = parts[3]
-    print("Got Minecraft version {}".format(mc_version))
-    print("Got Minecraft username {}".format(mc_username))
-    print("Got Minecraft uuid {}".format(mc_uuid))
-    print("Got auth token {}".format(mc_token))
+
+    assert validity.is_valid_minecraft_version(mc_version),\
+            "Received invalid Minecraft version {}".format(mc_version)
+    assert validity.is_valid_minecraft_username(mc_username),\
+            "Received invalid Minecraft username {}".format(mc_username)
+    assert validity.is_valid_minecraft_uuid(mc_uuid),\
+            "Received invalid Minecraft uuid {}".format(mc_uuid)
+    assert validity.is_valid_minecraft_token(mc_token),\
+            "Received invalid Minecraft token {}"
 
     next_status_window()
+
+    mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
+
+    mc_instance = MCVersion(mc_version, mc_acc)
+    mc_instance.launch()
 
 
 def client_main(cfg):
@@ -171,6 +204,15 @@ def client_main(cfg):
         with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
            
             request(ssock)
+
+    # We only proceed when the Minecraft program terminates,
+    # at which point we should release the account.
+
+    with socket.create_connection((dest_ip, cfg.get_port())) as sock:
+        with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
+           
+            release(ssock)
+
 
 
 def startup():

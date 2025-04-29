@@ -87,6 +87,10 @@ CPJAR_SEPARATOR = ":"
 class MCVersion:
 
 
+    """
+    Accepts a minecraft version (validity defined by common.validity)
+    and an MCAccount instance
+    """
     def __init__(self, version, mc_account):
 
         if not validity.is_valid_minecraft_version(version):
