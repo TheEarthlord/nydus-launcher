@@ -569,4 +569,5 @@ class MCVersion:
         launch_list = launch_command.split()
         subprocess.run(launch_list)
 
-        # TODO detect when it finishes
+        # subprocess.run should block until the process finishes. So we'll return when
+        # Minecraft is closed and we're ready to release the account.
