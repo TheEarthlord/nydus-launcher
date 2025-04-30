@@ -7,7 +7,7 @@ import datetime
 import threading
 import time
 from nydus.common.allocater import AllocEngine
-from nydus.server import ServerConfig
+from nydus.server.ServerConfig import ServerConfig
 from nydus.common import validity
 from nydus.common import netauth
 from nydus.common import alloc_utils

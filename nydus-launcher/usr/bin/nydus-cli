@@ -3,7 +3,7 @@
 import sys
 from nydus.common import validity
 from nydus.common.allocater import AllocEngine
-from nydus.cli import CliConfig
+from nydus.cli.CliConfig import CliConfig
 from nydus.common import netauth
 from nydus.common import alloc_utils
 
