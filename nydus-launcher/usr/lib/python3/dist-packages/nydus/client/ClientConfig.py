@@ -3,7 +3,7 @@ import os
 from nydus.common import validity
 from nydus.common.Config import Config
 
-CLIENT_CONFIG_FILE = "/etc/nydus-launcher/client.conf"
+CLIENT_CONFIG_FILE = "/etc/nydus/nydus-client.conf"
 
 SERVERIPADDR = "ServerIpAddr"
 PORT = "Port"

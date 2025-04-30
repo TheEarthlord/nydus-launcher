@@ -4,7 +4,7 @@ from nydus.common import validity
 from nydus.common.Config import Config
 
 # Remember this needs to be the same as the server config file
-CLI_CONFIG_FILE = "/etc/nydus-launcher/server.conf"
+CLI_CONFIG_FILE = "/etc/nydus/nydus-server.conf"
 
 IPADDR = "IpAddr"
 PORT = "Port"

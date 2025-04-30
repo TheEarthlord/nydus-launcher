@@ -365,7 +365,7 @@ It must be
 3) not overlap with any existing Nydus Config class attributes
 """
 def is_valid_varname(varname):
-    if not isinstance(varrname, str):
+    if not isinstance(varname, str):
         return False
     if not varname.isidentifier():
         return False
