@@ -1,7 +1,7 @@
 
 import os
 from nydus.common import validity
-from nydus.common import Config
+from nydus.common.Config import Config
 
 SERVER_CONFIG_FILE = "/etc/nydus-launcher/server.conf"
 

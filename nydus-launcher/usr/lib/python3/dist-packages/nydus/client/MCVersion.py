@@ -5,7 +5,7 @@ import json
 from json.decoder import JSONDecodeError
 from nydus.common import validity
 from nydus.client import utils
-from nydus.common import MCAccount
+from nydus.common.MCAccount import MCAccount
 from nydus.client.DownloadFile import DownloadFile
 from nydus.client.utils import MC_DOWNLOAD_DIR
 
