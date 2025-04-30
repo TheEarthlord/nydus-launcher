@@ -3,7 +3,7 @@ from nydus.common import netauth
 from nydus.common.Config import Config
 from nydus.common.allocater import AllocEngine
 from nydus.common.SSHLogins import SSHLogins
-from nyuds.common import validity
+from nydus.common import validity
 from msal import PublicClientApplication
 import threading
 
