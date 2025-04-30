@@ -328,6 +328,10 @@ def get_tok_msal(username, app, interactive_allowed=True):
         if found:
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
 
+    # TODO
+    # acquire_token_interactive, which uses a browser, seems
+    # to not work when run as root.
+    # Think about what user should do what on the nydus server program
     if not result and interactive_allowed:
         result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
 
