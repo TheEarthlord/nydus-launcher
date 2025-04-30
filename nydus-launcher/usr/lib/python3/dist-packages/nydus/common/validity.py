@@ -349,7 +349,7 @@ and the values are default values for those parameters.
 def is_valid_defconfig(defconfig):
     if not isinstance(defconfig, dict):
         return False
-    if not is_valid_parnames(defconfig.keys()):
+    if not is_valid_parnames(list(defconfig.keys())):
         return False
     for k in defconfig:
         if not isinstance(defconfig[k], str):
@@ -384,7 +384,7 @@ That is, the value must be a valid python identifier.
 def is_valid_varnames(varnames):
     if not isinstance(varnames, dict):
         return False
-    if not is_valid_parnames(varnames.keys()):
+    if not is_valid_parnames(list(varnames.keys())):
         return False
     for k in varnames:
         attrname = varnames[k]
