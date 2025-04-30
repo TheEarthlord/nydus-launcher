@@ -1,3 +1,10 @@
+nydus-launcher (1.0.3) jammy; urgency=medium
+
+  * Begun bug fixing to get the program running 
+  * Added systemd service
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 30 Apr 2025 15:49:58 +1000
+
 nydus-launcher (1.0.2) jammy; urgency=medium
 
   * Tests should run from the installed package
