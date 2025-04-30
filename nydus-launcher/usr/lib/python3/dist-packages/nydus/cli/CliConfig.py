@@ -29,12 +29,12 @@ SERVER_PARNAMES = [
 CLI_DEFCONFIG = {
     IPADDR: "192.168.1.1",
     PORT: "2011",
-    CERTFILE: "nydus-server.crt",
-    CERTPRIVKEY: "nydus-server.key",
+    CERTFILE: "/etc/nydus/nydus-server.crt",
+    CERTPRIVKEY: "/etc/nydus/nydus-server.key",
     MCVERSION: "1.20.6",
     MSALCID: "1ab23456-7890-1c2d-e3fg-45h6789ijk01",
-    ALLOCFILE: "nydus-alloc.csv",
-    ACCOUNTSFILE: "ms-usernames.txt",
+    ALLOCFILE: "/etc/nydus/nydus-alloc.csv",
+    ACCOUNTSFILE: "/etc/nydus/ms-usernames.txt",
 }
 
 # Maps between the parameter name used in the config file

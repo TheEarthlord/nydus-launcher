@@ -27,7 +27,7 @@ def is_valid_file(filename):
 
     if os.path.isfile(filename):
         try:
-            with open(fname, "r") as f:
+            with open(filename, "r") as f:
                 pass
         except PermissionError:
             return False

@@ -41,11 +41,11 @@ class ClientConfig(Config):
         if not validity.is_valid_file(self.ca_chain):
             raise ValueError("Value for {} is not a file, cannot be found, or cannot be read: {}".format(CACHAINFILE, self.ca_chain))
 
-        def get_server_ip(self):
-            return self.server_ip
+    def get_server_ip(self):
+        return self.server_ip
 
-        def get_port(self):
-            return self.port
+    def get_port(self):
+        return self.port
 
-        def get_ca_chain(self):
-            return self.ca_chain
+    def get_ca_chain(self):
+        return self.ca_chain

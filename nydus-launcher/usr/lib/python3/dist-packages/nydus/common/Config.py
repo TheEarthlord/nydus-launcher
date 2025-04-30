@@ -67,7 +67,7 @@ class Config:
                 # Look for the parameter name
 
                 found_param = False
-                for pname in self.parname:
+                for pname in self.parnames:
                     if line.startswith(pname):
                         rest = line[len(pname):]
                         rest = rest.strip()

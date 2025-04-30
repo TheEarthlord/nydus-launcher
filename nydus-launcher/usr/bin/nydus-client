@@ -195,7 +195,7 @@ def client_main(cfg):
     # Should we allow this to be configured, or require
     # that the cert be in system trusted store?
     # Error to handle: if cert doesn't exist
-    context.load_verify_locations(cafile=cfg.get_ca_cert())
+    context.load_verify_locations(cafile=cfg.get_ca_chain())
 
     # Error to handle: server ip not reachable
     # Error to handle: nothing listening on wanted port

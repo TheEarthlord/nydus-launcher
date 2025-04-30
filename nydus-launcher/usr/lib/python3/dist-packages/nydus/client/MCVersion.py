@@ -7,7 +7,7 @@ from nydus.common import validity
 from nydus.client import utils
 from nydus.common.MCAccount import MCAccount
 from nydus.client.DownloadFile import DownloadFile
-from nydus.client.utils import MC_DOWNLOAD_DIR
+from nydus.client.DownloadFile import MC_DOWNLOAD_DIR
 
 # Class for storing everything we need to launch
 # a specific version of Minecraft
