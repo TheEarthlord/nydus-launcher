@@ -328,37 +328,87 @@ class TestVersion(unittest.TestCase):
 class TestMinecraftVersion(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue("1.20.4")
+        self.assertTrue(is_valid_minecraft_version("1.20.4"))
 
     def test_simple2(self):
-        self.assertTrue("1.20.6")
+        self.assertTrue(is_valid_minecraft_version("1.20.6"))
 
     def test_simple3(self):
-        self.assertTrue("1.21.4")
+        self.assertTrue(is_valid_minecraft_version("1.21.4"))
 
     def test_opti1(self):
-        self.assertTrue("1.20.4-OptiFine_HD_U_I7")
+        self.assertTrue(is_valid_minecraft_version("1.20.4-OptiFine_HD_U_I7"))
 
     def test_opti2(self):
-        self.assertTrue("1.21.3-OptiFine_HD_U_J2")
+        self.assertTrue(is_valid_minecraft_version("1.21.3-OptiFine_HD_U_J2"))
 
     def test_rc1(self):
-        self.assertTrue("1.21-rc1")
+        self.assertTrue(is_valid_minecraft_version("1.21-rc1"))
 
     def test_rc2(self):
-        self.assertTrue("1.21.4-rc3")
+        self.assertTrue(is_valid_minecraft_version("1.21.4-rc3"))
 
     def test_rc2(self):
-        self.assertTrue("1.20-rc1")
+        self.assertTrue(is_valid_minecraft_version("1.20-rc1"))
 
     def test_pre1(self):
-        self.assertTrue("1.21.4-pre2")
+        self.assertTrue(is_valid_minecraft_version("1.21.4-pre2"))
 
     def test_pre2(self):
-        self.assertTrue("1.20.3-pre4")
+        self.assertTrue(is_valid_minecraft_version("1.20.3-pre4"))
 
     def test_pre3(self):
-        self.assertTrue("1.20-pre6")
+        self.assertTrue(is_valid_minecraft_version("1.20-pre6"))
+
+class TestMineUname(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestMineUUID(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestMSALCID(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestMSALTok(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestXBLTok(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestXSTSTok(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+class TestNonEmpStr(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_nonempty_str("1.20.4"))
+
+    def test_no(self):
+        self.assertFalse(is_nonempty_str(""))
+
+    def test_type1(self):
+        self.assertFalse(is_nonempty_str(True))
+
+    def test_type2(self):
+        self.assertFalse(is_nonempty_str(0.1))
+
+    def test_type3(self):
+        self.assertFalse(is_nonempty_str(14))
+
+    def test_type4(self):
+        self.assertFalse(is_nonempty_str([]))
 
 if __name__ == "__main__":
     unittest.main()
