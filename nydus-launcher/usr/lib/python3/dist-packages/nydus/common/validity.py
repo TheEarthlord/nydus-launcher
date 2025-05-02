@@ -2,6 +2,7 @@
 import os
 import datetime
 import pwd
+import re
 
 IP_SEG_MIN = 0
 IP_SEG_MAX = 255
@@ -13,6 +14,17 @@ XB_EXPIRY_SECONDS_FORMAT = "%Y-%m-%dT%H:%M:%S"
 XB_EXPIRY_FORMAT = XB_EXPIRY_SECONDS_FORMAT + "%fZ"
 XB_EXPIRY_SUFFIX = "Z"
 XB_EXPIRY_SEPARATER = "."
+MC_UUID_LEN = 32
+
+# Fairly wide margin of error on lengths
+MC_TOK_MINLEN = 1000
+MC_TOK_MAXLEN = 1100
+MSAL_TOK_MINLEN = 1300
+MSAL_TOK_MAXLEN = 1400
+XBL_TOK_MINLEN = 1400
+XBL_TOK_MAXLEN = 1700
+XSTS_TOK_MINLEN = 2000
+XSTS_TOK_MAXLEN = 2300
 
 """
 Returns True if
@@ -194,25 +206,43 @@ def is_valid_minecraft_version(vers):
     return True
 
     
-# TODO
-# More precise checks for valid username, uuid,
-# and access token, and msal cid
-# Need to know the exact rules.
 def is_valid_minecraft_username(acc):
     if not is_nonempty_str(acc):
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+"):
         return False
     return True
 
 def is_valid_minecraft_uuid(uuid):
     if not is_nonempty_str(uuid):
         return False
+
+    if len(uuid) != MC_UUID_LEN:
+        return False
+
+    if not re.fullmatch(r"[a-f0-9]+"):
+        return False
     return True
 
 def is_valid_minecraft_token(token):
     if not is_nonempty_str(token):
         return False
+
+    if len(token) < MC_TOK_MINLEN:
+        return False
+
+    if len(token) > MC_TOK_MAXLEN:
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+        return False
     return True
 
+
+# TODO
+# More precise checks for msal cid
+# Need to know the exact rules.
 def is_valid_msal_cid(cid):
     if not is_nonempty_str(cid):
         return False
@@ -221,16 +251,42 @@ def is_valid_msal_cid(cid):
 def is_valid_msal_token(token):
     if not is_nonempty_str(token):
         return False
+    
+    if len(token) < MSAL_TOK_MINLEN:
+        return False
+    if len(token) > MSAL_TOK_MAXLEN:
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z0-9+=/]+"):
+        return False
     return True
 
 def is_valid_xboxlive_token(token):
     if not is_nonempty_str(token):
         return False
+
+    if len(token) < XBL_TOK_MINLEN:
+        return False
+    if len(token) > XBL_TOK_MAXLEN:
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+        return False
+
     return True
 
 def is_valid_xsts_token(token):
     if not is_nonempty_str(token):
         return False
+
+    if len(token) < XSTS_TOK_MINLEN:
+        return False
+    if len(token) > XSTS_TOK_MAXLEN:
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+        return False
+
     return True
 
 def is_nonempty_str(mystr):
