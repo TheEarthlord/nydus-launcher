@@ -1,3 +1,10 @@
+nydus-launcher (1.0.4) jammy; urgency=medium
+
+  * Lots more tests in nydus-test for the common/validity module
+  * Some accompanying corrections to the common/validity module
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Fri, 02 May 2025 18:56:21 +1000
+
 nydus-launcher (1.0.3) jammy; urgency=medium
 
   * Begun bug fixing to get the program running 
