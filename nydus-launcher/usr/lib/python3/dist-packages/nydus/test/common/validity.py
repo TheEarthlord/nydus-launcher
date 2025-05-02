@@ -363,17 +363,51 @@ class TestMinecraftVersion(unittest.TestCase):
 class TestMineUname(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_nonempty_str("1.20.4"))
+        self.assertTrue(is_valid_minecraft_username("CrutechAccount2"))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_minecraft_username("CrutechAccount10"))
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_minecraft_username("xx_Iamdabest_xx"))
+
+    def test_empty(self):
+        self.assertFalse(is_valid_minecraft_username(""))
+
 
 class TestMineUUID(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_nonempty_str("1.20.4"))
+        self.assertTrue(is_valid_minecraft_uuid("646569dcac574eea88f2983856e505e4"))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_minecraft_uuid("b2de15d62a854f679d74342009d6a3c5"))
+
+    def test_simple3(self):
+        self.assertTrue(is_valid_minecraft_uuid("302e3c2933524f52b69338cf5d84f5cb"))
+
+    def test_short(self):
+        self.assertFalse(is_valid_minecraft_uuid("646569dcac574eea88f2983856e505e"))
+
+    def test_long(self):
+        self.assertFalse(is_valid_minecraft_uuid("b2de15d62a854f679d74342009d6a3c51"))
+
+    def test_letter1(self):
+        self.assertFalse(is_valid_minecraft_uuid("302E3c2933524f52b69338cf5d84f5cb"))
+
+    def test_letter2(self):
+        self.assertFalse(is_valid_minecraft_uuid("646569dcac574eea88f2983856g505e4"))
+
+    def test_letter3(self):
+        self.assertFalse(is_valid_minecraft_uuid("b2de15x62a854f679d74342009d6a3c5"))
+
+    def test_letter4(self):
+        self.assertFalse(is_valid_minecraft_uuid("302p3c2933524q52b69338rs5d84t5uv"))
 
 class TestMSALCID(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_nonempty_str("1.20.4"))
+        self.assertTrue(is_valid_minecraft_token("1.20.4"))
 
 class TestMSALTok(unittest.TestCase):
 
