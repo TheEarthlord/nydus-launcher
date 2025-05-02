@@ -550,44 +550,332 @@ class TestXboxTimestamp(unittest.TestCase):
 
 class TestParname(unittest.TestCase):
 
+
     def test_simple1(self):
-        self.assertTrue(is_valid_parname(""))
+        self.assertTrue(is_valid_parname("IpAddr"))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_parname("MSALClientId"))
+
+    def test_simple3(self):
+        self.assertTrue(is_valid_parname("AccountsFile"))
+
+    def test_simple4(self):
+        self.assertTrue(is_valid_parname("ServerIpAddr"))
+
+    def test_simple5(self):
+        self.assertTrue(is_valid_parname("Port"))
 
     def test_fail1(self):
-        self.assertFalse(is_valid_parname(""))
+        self.assertFalse(is_valid_parname("MSAL ClientId"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_parname("Port=2011"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_parname("ServerIpAddr\nPort"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_parname("AccountsFile\t"))
 
 class TestParnames(unittest.TestCase):
 
     def test_simple1(self):
+        self.assertTrue(is_valid_parnames([
+            "IpAddr",
+            "Port",
+            "CertFile",
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            "AllocFile",
+            "AccountsFile"
+        ]))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_parnames([
+            "ServerIpAddr",
+            "Port",
+            "CaChainFile",
+        ]))
+
+    def test_empty(self):
         self.assertTrue(is_valid_parnames([]))
 
     def test_fail1(self):
-        self.assertFalse(is_valid_parnames([]))
+        self.assertFalse(is_valid_parnames([
+            "IpAddr",
+            "Port",
+            True,
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            "AllocFile",
+            "AccountsFile"
+        ]))
 
+    def test_fail2(self):
+        self.assertFalse(is_valid_parnames([
+            "IpAddr",
+            "Port",
+            "CertFile",
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            1112335572127,
+            "AccountsFile"
+        ]))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_parnames([
+            "IpAddr=192.168.1.1",
+            "Port",
+            "CertFile",
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            "AllocFile",
+            "AccountsFile"
+        ]))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_parnames([
+            "IpAddr",
+            "Port",
+            "CertFile",
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            "AllocFile",
+            "AccountsFile\n"
+        ]))
+
+    def test_type1(self):
+        self.assertFalse(is_valid_parnames({"set"}))
+
+    def test_type2(self):
+        self.assertFalse(is_valid_parnames({"dictionary":"A"}))
 
 class TestDefconfig(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_valid_defconfig({}))
+        self.assertTrue(is_valid_defconfig({
+            "ServerIpAddr": "192.168.1.1",
+            "Port": "2011",
+            "CaChainFile": "nydus-ca.crt"
+        }))
+
+    def test_simple2(self):
+        self.assertFalse(is_valid_defconfig({
+            "IpAddr": "192.168.1.1",
+            "Port": "2011",
+            "CertFile": "/etc/nydus/nydus-server.crt",
+            "CertPrivKey": "/etc/nydus/nydus-server.key",
+            "McVersion": "1.20.6",
+            "MSALClientId": "1ab23456-7890-1c2d-e3fg-45h6789ijk01",
+            "AllocFile": "/etc/nydus/nydus-alloc.csv",
+            "AccountsFile": "/etc/nydus/ms-usernames.txt",
+        }))
 
     def test_fail1(self):
-        self.assertFalse(is_valid_defconfig({}))
+        self.assertFalse(is_valid_defconfig({
+            "ServerIpAddr": "192.168.1.1",
+            "Port": 2011,
+            "CaChainFile": "nydus-ca.crt"
+        }))
+
+    def test_fail2(self):
+        self.assertFalse(is_valid_defconfig({
+            "ServerIpAddr": 192.168,
+            "Port": "2011",
+            "CaChainFile": "nydus-ca.crt"
+        }))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_defconfig({
+            "Server Ip Addr": "192.168.1.1",
+            "Port": "2011",
+            "CaChainFile": "nydus-ca.crt"
+        }))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_defconfig({
+            "ServerIpAddr": "192.168.1.1",
+            "Port": "2011",
+            "CaChain\nFile": "nydus-ca.crt"
+        }))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_defconfig({
+            "ServerIpAddr": "192.168.1.1",
+            "Port=89": "2011",
+            "CaChainFile": "nydus-ca.crt"
+        }))
+
+    def test_type1(self):
+        self.assertFalse(is_valid_defconfig([
+            "ServerIpAddr",
+            "Port",
+            "CaChainFile",
+        ]))
+
+    def test_type2(self):
+        self.assertFalse(is_valid_defconfig({
+            "192.168.1.1",
+            "2011",
+            "nydus-ca.crt"
+        }))
+
 
 class TestVarname(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_valid_varname(""))
+        self.assertTrue(is_valid_varname("port"))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_varname("ip_addr"))
+
+    def test_simple3(self):
+        self.assertTrue(is_valid_varname("mc_version"))
+
+    def test_simple4(self):
+        self.assertTrue(is_valid_varname("server_ip"))
+
+    def test_simple5(self):
+        self.assertTrue(is_valid_varname("accounts_file"))
+
+    def test_reserved1(self):
+        self.assertFalse(is_valid_varname("path"))
+
+    def test_reserved1(self):
+        self.assertFalse(is_valid_varname("parnames"))
+
+    def test_reserved1(self):
+        self.assertFalse(is_valid_varname("varnames"))
 
     def test_fail1(self):
         self.assertFalse(is_valid_varname(""))
 
+    def test_fail1(self):
+        self.assertFalse(is_valid_varname("1address"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_varname("ip-address"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_varname("mcvers!on"))
+
 class TestVarnames(unittest.TestCase):
 
     def test_simple1(self):
-        self.assertTrue(is_valid_varnames({}))
+        self.assertTrue(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "port",
+            "CertFile": "cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion": "mc_version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_varnames({
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_simple3(self):
+        self.assertTrue(is_valid_varnames({
+            "ServerIpAddr": "server_ip",
+            "Port": "port",
+            "CaChainFile": "ca_chain"
+        }))
 
     def test_fail1(self):
-        self.assertFalse(is_valid_varnames({}))
+        self.assertFalse(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "port",
+            "CertFile": "8cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion": "mc_version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_fail2(self):
+        self.assertFalse(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "port",
+            "CertFile": "cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion=1.1": "mc_version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "port",
+            "CertFile": "cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion": "mc_version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile\n": "accounts_file"
+        }))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "port",
+            "CertFile": "cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion": "mc version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_varnames({
+            "IpAddr": "ip_addr",
+            "Port": "~port",
+            "CertFile": "cert_file",
+            "CertPrivKey": "cert_privkey",
+            "McVersion": "mc_version",
+            "MSALClientId": "msal_cid",
+            "AllocFile": "alloc_file",
+            "AccountsFile": "accounts_file"
+        }))
+
+    def test_type1(self):
+        self.assertFalse(is_valid_varnames([
+            "ip_addr",
+            "port",
+            "cert_file",
+            "cert_privkey",
+            "mc_version",
+            "msal_cid",
+            "alloc_file",
+            "accounts_file"
+        ]))
+
+    def test_type2(self):
+        self.assertFalse(is_valid_varnames({
+            "IpAddr",
+            "Port",
+            "CertFile",
+            "CertPrivKey",
+            "McVersion",
+            "MSALClientId",
+            "AllocFile",
+            "AccountsFile"
+        }))
 
 if __name__ == "__main__":
     unittest.main()

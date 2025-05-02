@@ -418,7 +418,7 @@ A 'varname' is the name of a class attribute under which
 the value of a config parameter will be stored.
 It must be
 1) a string
-2) a valid python identified
+2) a valid python identifier
 3) not overlap with any existing Nydus Config class attributes
 """
 def is_valid_varname(varname):
