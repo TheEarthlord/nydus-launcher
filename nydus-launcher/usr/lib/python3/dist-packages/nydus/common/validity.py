@@ -3,6 +3,7 @@ import os
 import datetime
 import pwd
 import re
+import string
 
 IP_SEG_MIN = 0
 IP_SEG_MAX = 255
@@ -11,9 +12,9 @@ PORT_MAX = 2**16 - 1
 MC_VERSION_PARTS = 3
 TIME_FORMAT = "%d-%m-%Y %H:%M:%S"
 XB_EXPIRY_SECONDS_FORMAT = "%Y-%m-%dT%H:%M:%S"
-XB_EXPIRY_FORMAT = XB_EXPIRY_SECONDS_FORMAT + "%fZ"
-XB_EXPIRY_SUFFIX = "Z"
 XB_EXPIRY_SEPARATER = "."
+XB_EXPIRY_FORMAT = XB_EXPIRY_SECONDS_FORMAT + XB_EXPIRY_SEPARATER + "%fZ"
+XB_EXPIRY_SUFFIX = "Z"
 MC_UUID_LEN = 32
 
 # Fairly wide margin of error on lengths
@@ -211,7 +212,7 @@ def is_valid_minecraft_username(acc):
         return False
 
     # TODO may be too strict
-    if not re.fullmatch(r"[a-zA-Z0-9_-]+"):
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+", acc):
         return False
     return True
 
@@ -222,7 +223,7 @@ def is_valid_minecraft_uuid(uuid):
     if len(uuid) != MC_UUID_LEN:
         return False
 
-    if not re.fullmatch(r"[a-f0-9]+"):
+    if not re.fullmatch(r"[a-f0-9]+", uuid):
         return False
     return True
 
@@ -236,7 +237,7 @@ def is_valid_minecraft_token(token):
     if len(token) > MC_TOK_MAXLEN:
         return False
 
-    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", token):
         return False
     return True
 
@@ -258,7 +259,7 @@ def is_valid_msal_token(token):
     if len(token) > MSAL_TOK_MAXLEN:
         return False
 
-    if not re.fullmatch(r"[a-zA-Z0-9+=/]+"):
+    if not re.fullmatch(r"[a-zA-Z0-9+=/]+", token):
         return False
     return True
 
@@ -271,7 +272,7 @@ def is_valid_xboxlive_token(token):
     if len(token) > XBL_TOK_MAXLEN:
         return False
 
-    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", token):
         return False
 
     return True
@@ -285,7 +286,7 @@ def is_valid_xsts_token(token):
     if len(token) > XSTS_TOK_MAXLEN:
         return False
 
-    if not re.fullmatch(r"[a-zA-Z0-9._-]+"):
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", token):
         return False
 
     return True
@@ -349,7 +350,7 @@ def is_valid_xbox_timestamp(ts):
     if len(fractional_part) < 6 or len(fractional_part) > 7:
         return False
 
-    if not fractional_part.is_decimal():
+    if not fractional_part.isdecimal():
         return False
 
     return True
@@ -383,8 +384,9 @@ def is_valid_parname(parname):
         return False
     if parname.find("=") != -1:
         return False
-    if len(parname.split()) > 1:
-        return False
+    for whitechar in string.whitespace:
+        if parname.find(whitechar) != -1:
+            return False
     return True
 
 """
