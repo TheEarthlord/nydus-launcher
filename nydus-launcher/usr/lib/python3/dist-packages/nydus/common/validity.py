@@ -210,6 +210,7 @@ def is_valid_minecraft_username(acc):
     if not is_nonempty_str(acc):
         return False
 
+    # TODO may be too strict
     if not re.fullmatch(r"[a-zA-Z0-9_-]+"):
         return False
     return True

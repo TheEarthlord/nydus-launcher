@@ -477,5 +477,117 @@ class TestNonEmpStr(unittest.TestCase):
     def test_type4(self):
         self.assertFalse(is_nonempty_str([]))
 
+class TestStrTimestamp(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_str_timestamp("02-05-2025 06:18:21"))
+
+    def test_simple2(self):
+        self.assertTrue(is_valid_str_timestamp("02-05-2025 22:18:22"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_str_timestamp(""))
+
+    def test_fail2(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025T06:18:21"))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025 06:18:21Z"))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_str_timestamp("32-05-2025T06:18:21"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_str_timestamp("02-14-2025T06:18:21"))
+
+    def test_fail6(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025T35:18:21"))
+
+    def test_fail7(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025T06:61:21"))
+
+    def test_fail8(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025T06:18:90"))
+
+    def test_fail9(self):
+        self.assertFalse(is_valid_str_timestamp("02-05-2025T06:180:21"))
+
+
+class TestXboxTimestamp(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_xbox_timestamp("2025-05-02T06:18:21.6780236Z"))
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_xbox_timestamp("2025-05-02T22:18:22.5488737Z"))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_xbox_timestamp("025-05-02T06:18:21.6780236Z"))
+
+    def test_fail2(self):
+        self.assertFalse(is_valid_xbox_timestamp(""))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-02T22:18:22.5488737"))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-02T22:18:22Z"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-19-02T22:18:22.5488737Z"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-34T22:18:22.5488737Z"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-02T25:18:22.5488737Z"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-02T22:78:22.5488737Z"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_xbox_timestamp("2025-05-02T22:18:62.5488737Z"))
+
+class TestParname(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_parname(""))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_parname(""))
+
+class TestParnames(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_parnames([]))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_parnames([]))
+
+
+class TestDefconfig(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_defconfig({}))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_defconfig({}))
+
+class TestVarname(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_varname(""))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_varname(""))
+
+class TestVarnames(unittest.TestCase):
+
+    def test_simple1(self):
+        self.assertTrue(is_valid_varnames({}))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_varnames({}))
+
 if __name__ == "__main__":
     unittest.main()
