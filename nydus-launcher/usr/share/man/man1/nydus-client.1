@@ -1,4 +1,4 @@
-.TH "nydus-client" "1" "Jan 2025" "Christopher Irving" ""
+.TH "nydus-client" "1" "May 2025" "Christopher Irving" ""
 .SH "NAME"
 .LP 
 nydus\-client \- Client program which requests a Minecraft account from the Nydus Launcher server and launchers Minecraft with it. 
@@ -7,4 +7,28 @@ nydus\-client \- Client program which requests a Minecraft account from the Nydu
 nydus\-client
 .SH "DESCRIPTION"
 .LP 
-Client program which requests a Minecraft account from the Nydus Launcher server and launchers Minecraft with it.
+When
+.IR nydus-client
+is invoked, it will attempt to contact a Nydus Launcher server to be allocated a Minecraft account and access token.
+If successful, it will launch Minecraft using that account.
+Once Minecraft is closed,
+.IR nydus-client
+will again attempt to contact the server to release its ownership of the Minecraft account.
+
+.IR nydus-client
+has no command line arguments. All configuration is done by settings in the configuration
+file found at
+.BR /etc/nydus/nydus-client.conf.
+
+See
+.BR nydus-client.conf (5)
+for details on the configuration file's format.
+
+To run a Nydus Launcher server, see
+.BR nydus-server (1).
+
+.SH "SEE ALSO"
+.LP
+.BR nydus-client.conf (5),
+.BR nydus-server (1),
+.BR nydus-cli (1)
