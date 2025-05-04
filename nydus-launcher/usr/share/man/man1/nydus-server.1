@@ -7,4 +7,75 @@ nydus\-server \- Nydus Launcher server program which authenticates Minecraft acc
 nydus\-server
 .SH "DESCRIPTION"
 .LP 
-Nydus Launcher server program which authenticates Minecraft accounts and allocates them to clients. 
+Upon startup,
+.IR nydus-server
+attempts to authenticate all the Minecraft accounts it has been given.
+This usually involves opening a browser and requires a human to log each account in.
+.IR nydus-server
+will then store all account authentication tokens in a local file
+and listen for connection attempts from
+.IR nydus-client
+instances on the network.
+Clients may either request a Minecraft account be allocated to them, or release
+an account already allocated to them.
+.IR nydus-server
+keeps track of all authenticated Minecraft accounts that can be used, and the
+IP address, system username, and time of allocation for each account in use
+by a client. It also periodically rechecks that the relevant user is logged
+in on the relevant client machine (assuming that system user accounts
+on the clients are authenticated using SSHFS to the server where
+.IR nydus-server
+is running) to release allocations for any Minecraft account which instances of
+.IR nydus-client
+may have failed to release explicitly, possibly due to unexpected logouts or shutdowns
+on the clients.
+
+.IR nydus-server
+will periodically renew authentication tokens which are close to expiring, so there
+should be no need for a human to manually authenticate any accounts again after
+the server is first started.
+
+The server stores authentication tokens for all accounts and information on which
+accounts are allocated (collectively called the "allocation database") in a file
+on the system. The location of the allocation database is configured through
+.BR /etc/nydus/nydus-server.conf,
+but it defaults to
+.BR /etc/nydus/nydus-alloc.csv.
+If the file is empty when the server first starts, it will populate
+the file with information as accounts are authenticated, then proceed to add in
+allocation information as clients request accounts.
+But if the file is already populated when the server starts, it will try to read
+the state from the file and proceed accordingly.
+The allocation database is re-written to the file each time an allocation or
+authentication change happens to one of the Minecraft accounts, so if
+.IR nydus-server
+crashes, you may be able to simply restart it and continue operation, using
+the existing contents of the allocation database from when the server was
+last functioning.
+
+.IR nydus-server
+has no command line arguments. It is entirely configured by options in the configuration
+file found at
+.BR /etc/nydus/nydus-server.conf.
+See
+.BR nydus-server.conf (5)
+for details on the configuration file's format.
+
+You can start the Nydus Launcher server by simply invoking
+.IR nydus-server
+from the command line, but it is recommended to instead
+use the systemd service included in the Debian package.
+
+The Nydus Launcher suite also includes the program
+.IR nydus-cli
+which is intended to manually manipulate the database of
+Minecraft account allocations, such as manually allocating
+or releasing a particular account, while the Nydus Launcher server
+is running. This should not ordinarily be needed, but may
+be useful if the server misperforms in unexpected circumstances.
+
+.SH "SEE ALSO"
+.LP
+.BR nydus-server.conf (5),
+.BR nydus-client (1),
+.BR nydus-cli (1)
