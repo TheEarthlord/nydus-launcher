@@ -1,4 +1,4 @@
-.TH "nydus-cli" "1" "Jan 2025" "Christopher Irving" ""
+.TH "nydus-cli" "1" "May 2025" "Christopher Irving" ""
 .SH "NAME"
 .LP 
 nydus\-cli \- Command line interface for Nydus Launcher allocation database
@@ -7,4 +7,103 @@ nydus\-cli \- Command line interface for Nydus Launcher allocation database
 nydus\-cli [\fBcommand\fR]
 .SH "DESCRIPTION"
 .LP 
-Command line interface for Nydus Launcher allocation database
+As the Nydus Launcher server operates, it tracks authentication tokens related to the Minecraft accounts it manages, as well as information about
+which Nydus Launcher clients have been allocated the use of which Minecraft accounts.
+Collectively, this information is called the "allocation database", and
+is stored in a file on the disk.
+
+.IR nydus-cli
+provides a command line interface which can manually modify the
+state of the allocation database.
+In general,
+.IR nydus-cli
+should not be needed because
+.IR nydus-server
+should manage account allocation and release properly on its own. But
+.IR nydus-cli
+may be useful to view how the server is behaving or in instances of
+unexpected behaviour.
+
+.IR nydus-cli
+learns the location of the allocation database file and other
+configuration it needs by reading the configuration file for
+.IR nydus-server,
+namely,
+.BR /etc/nydus/nydus-server.conf.
+See
+.BR nydus-server.conf (5)
+for details on the configuration file's format.
+
+.SH "COMMANDS"
+
+.SS view
+.RS 2
+View the current contents of the entire allocation database.
+.RE
+
+.SS view-uuid <\fBuuid\fB>
+.RS 2
+View the current state of the Minecraft account with specified uuid
+in the allocation database.
+.RE
+
+.SS view-ip <\fBclient-ip\fB>
+.RS 2
+View the current state of all Minecraft accounts allocated to the
+specified client IP address in the allocation database.
+.RE
+
+.SS alloc <\fBclient-ip\fB> <\fBusername\fB> <\fBuuid\fB>
+.RS 2
+Allocate the Minecraft account with the specified uuid to the
+client IP address and system username given. This only modifies
+the allocation database; it doesn't cause the client to automatically
+launch Minecraft.
+.RE
+
+.SS release-uuid <\fBuuid\fB>
+.RS 2
+Release the Minecraft account with the specified uuid from any
+allocations it may have in the allocation database.
+.RE
+
+.SS release-ip <\fBclient-ip\fB>
+.RS 2
+Release all Minecraft accounts which are allocated to the specified
+client IP address from their allocations.
+.RE
+
+.SS cleanup
+.RS 2
+Perform a routine cleanup of the allocation database, as
+.IR nydus-server
+does periodically. Check that all client IPs and system usernames
+to which a Minecraft account is allocated are still active, and
+renew any access tokens associated with the Minecraft accounts
+that are approaching their expiry.
+.RE
+
+.SS create
+.RS 2
+Create a new allocation database by rereading the file of Minecraft account
+names and manually authenticating them, then overwriting the existing
+allocation database file, as
+.IR nydus-server
+does when it starts up for the first time.
+The location of the file containing a list of Minecraft accounts is found
+by reading the
+.IR nydus-server
+configuration file.
+.RE
+
+.SS help
+.RS 2
+View a list of all the options and available commands for
+.IR nydus-cli.
+.RE
+
+.SH "SEE ALSO"
+.LP
+.BR nydus-server.conf (5),
+.BR nydus-server (1),
+.BR nydus-client (1)
