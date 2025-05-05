@@ -1,10 +1,81 @@
-.TH "nydus-client.conf" "5" "Jan 2025" "Christopher Irving" ""
+.TH "nydus-client.conf" "5" "May 2025" "Christopher Irving" ""
 .SH "NAME"
 .LP 
-nydus\-client.conf \- The configuration file for the client in the Nydus Launcher suite. 
-.SH "SYNTAX"
-.LP 
-nydus\-client.conf
+/etc/nydus/nydus\-client.conf \- The configuration file for the client in the Nydus Launcher suite. 
 .SH "DESCRIPTION"
 .LP 
-The configuration file for the client in the Nydus Launcher suite. 
+The program
+.IR nydus-client
+gets all its configuration from the file
+.BR /etc/nydus/nydus\-client.conf.
+
+This file is made up of key/value statements, one per line.
+Lines starting with '#' or containing only whitespace are ignored.
+Lines specifying configuration will be of the form
+
+ParameterName=Value
+
+ParameterName must be one of the parameters listed below; an unrecognised
+configuration parameter will result in an error.
+Parameter names consist of alphabetic characters only.
+
+The parameter name must be followed by an equals sign, then
+the value for that parameter. The line must contain nothing other than
+whitespace after the value. No configuration values should contain
+whitespace either.
+
+A configuration line without an equals sign will result in an error.
+
+A configuration file need not include every paramter which the Nydus
+program can understand; each paramter has a built in default value
+which the program will use if that parameter is not present in the
+configuration file. However, most of these defaults, such as IP
+addresses and location of certificate files, will likely not make
+sense in your situation, so you should fill out the configuration
+file with all paramters in most cases.
+
+The debian package for the Nydus Launcher includes sample configuration
+files. The default values in these files should be the same as the default
+values built into the Nydus Launcher programs.
+
+.SH "PARAMETERS"
+
+.SS ServerIpAddr
+.RS 2
+The IP address of the machine where
+.IR nydus-server
+is running for this instance of
+.IR nydus-client
+to connect to and request or release Minecraft account allocations.
+Default is 192.168.1.1.
+This likely will not be correct for your network.
+.RE
+
+.SS Port
+.RS 2
+The port on which
+.IR nydus-server
+is listening for client connections.
+Default is 2011.
+.RE
+
+.SS CaChainFile
+.RS 2
+A file containing a certificate chain to be used in establishing
+an encrypted connection with
+.IR nydus-server
+for Minecraft account allocations.
+This certificate chain will ultimately be used as an argument to
+SSLContext.wrap_socket() from Python's ssl library.
+This certificate chain must allow the client to trust the
+certificate offered by
+.IR nydus-server
+; no attempt will be made to access the OS's store
+of trusted certificates.
+.RE
+
+.SH "SEE ALSO"
+.LP
+.BR nydus-client(1),
+.BR nydus-server.conf (5),
+.BR nydus-server (1)
