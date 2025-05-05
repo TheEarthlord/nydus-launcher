@@ -5,15 +5,17 @@
 .SH "DESCRIPTION"
 .LP 
 The program
-.IR nydus-server
+.BR nydus-server (1)
 gets all its configuration from the file
-.BR /etc/nydus/nydus\-server.conf.
+.IR /etc/nydus/nydus\-server.conf.
 
 This file is made up of key/value statements, one per line.
 Lines starting with '#' or containing only whitespace are ignored.
 Lines specifying configuration will be of the form
 
-ParameterName=Value
+.RS 4
+\fBParameterName\fR=\fBValue\fR
+.RE 
 
 ParameterName must be one of the parameters listed below; an unrecognised
 configuration parameter will result in an error.
@@ -26,13 +28,12 @@ whitespace either.
 
 A configuration line without an equals sign will result in an error.
 
-A configuration file need not include every paramter which the Nydus
+A configuration file need not include every parameter which the Nydus
 program can understand; each paramter has a built in default value
 which the program will use if that parameter is not present in the
 configuration file. However, most of these defaults, such as IP
 addresses and location of certificate files, will likely not make
-sense in your situation, so you should fill out the configuration
-file with all paramters in most cases.
+sense in your situation.
 
 The debian package for the Nydus Launcher includes sample configuration
 files. The default values in these files should be the same as the default
@@ -43,9 +44,9 @@ values built into the Nydus Launcher programs.
 .SS IpAddr
 .RS 2
 The IP address on the local machine which
-.IR nydus-server
+.BR nydus-server
 should bind to, and which instances of
-.IR nydus-client
+.BR nydus-client (1)
 will connect to for Minecraft account allocation.
 Default is 192.168.1.1.
 This is likely not correct for your situation.
@@ -54,64 +55,76 @@ This is likely not correct for your situation.
 .SS Port
 .RS 2
 The port on the local machine on which
-.IR nydus-server
+.BR nydus-server
 should listen for connections from instances of
-.IR nydus-client.
+.BR nydus-client.
 Default is 2011.
 .RE
 
 .SS CertFile
 .RS 2
-The certificate which
-.IR nydus-server
+The path to a file containing, in pem format, the certificate which
+.BR nydus-server
 will use to establish an encrypted connection
 with instances of
-.IR nydus-client.
-.IR nydus-client
+.BR nydus-client.
+.BR nydus-client
 needs to be configured to trust this certificate.
 (See
-.BR nydus-client.conf (5)
-)
+.BR nydus-client.conf (5).)
+The path must be absolute.
+This file and the private key below will ultimately be passed to
+SSLContext.load_cert_chain() from Python's ssl library.
 .RE
 
 .SS CertPrivKey
 .RS 2
-The private key associated with the certificate given for
-CertFile. This key must be kept secret and secure; anyone who
+The path to a file containing, in pem format, the private key associated
+with the certificate given for
+CertFile.
+The path must be absolute.
+This key must be kept secret and secure; anyone who
 has access to it can pretend to be a trusted
-.IR nydus-server.
+.BR nydus-server.
+This key and the certificate file above will ultimately be passed to
+SSLContext.load_cert_chain() from Python's ssl library.
 .RE
 
 .SS McVersion
 .RS 2
 The version of Minecraft which instances of
-.IR nydus-client
+.BR nydus-client
 should launch once an account has been allocated to them.
 Default is 1.20.6.
+Special versions like OptiFine versions may be used here, provided
+the right version of OptiFine is installed on the client machine.
 .RE
 
 .SS MSALClientId
 .RS 2
-The Microsoft Azure Client ID used to access MSAL for authenticating
+The Microsoft Azure Client ID used to access MSAL 
+(Microsoft Authentication Libraries) for authenticating
 to Xbox, and thence authenticating Minecraft accounts.
 The default is intentionally meaningless; you'll have to
-create your own Azure Client and use it here.
+create your own Azure Client, get it approved to use the Minecraft
+API, and enter its Client ID here.
 .RE
 
 .SS AllocFile
 .RS 2
 Path to a file which will be used to store the allocation database
 (access tokens and allocations for Minecraft accounts) while
-.IR nydus-server
+.BR nydus-server
 is running.
 
 Path must be absolute.
 
-Default is /etc/nydus/nydus-alloc.csv.
+Default is
+.IR /etc/nydus/nydus-alloc.csv.
 This default will probably work fine, unless you want to put the
 file in a special place or employ special security precautions.
 If the file doesn't exist or is empty initially,
-.IR nydus-server
+.BR nydus-server
 will simply create it and fill out the allocation database accordingly.
 .RE
 
@@ -120,7 +133,7 @@ will simply create it and fill out the allocation database accordingly.
 Path to a file containing a list of Microsoft account names which
 own Minecraft. All these accounts will attempt to be authenticated
 for Minecraft when
-.IR nydus-server
+.BR nydus-server
 starts, and those that are successful will form the body of accounts
 available to be allocated to clients.
 
@@ -130,7 +143,8 @@ for one Microsoft account that is to be used for running Minecraft.
 
 Path must be absolute.
 
-Default is /etc/nydus/ms-usernames.txt.
+Default is
+.IR /etc/nydus/ms-usernames.txt.
 
 You can use the default file path or make your own, but you need to
 make sure it exists and contains the email addresses
