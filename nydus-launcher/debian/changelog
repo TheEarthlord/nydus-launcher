@@ -1,3 +1,9 @@
+nydus-launcher (1.0.5) jammy; urgency=medium
+
+  * Properly filled out man pages
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 06 May 2025 13:33:05 +1000
+
 nydus-launcher (1.0.4) jammy; urgency=medium
 
   * Lots more tests in nydus-test for the common/validity module
