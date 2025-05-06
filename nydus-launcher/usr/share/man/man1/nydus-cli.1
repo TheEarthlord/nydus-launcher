@@ -25,14 +25,23 @@ may be useful to view how the server is behaving or in instances of
 unexpected behaviour.
 
 .BR nydus-cli
-learns the location of the allocation database file and other
-configuration it needs by reading the configuration file for
+gets the configuration it needs by reading the configuration file for
 .BR nydus-server,
 namely,
 .IR /etc/nydus/nydus-server.conf.
 See
 .BR nydus-server.conf (5)
 for details on the configuration file's format.
+Specifically,
+.BR nydus-cli
+uses the parameters
+.BR MSALClientId,
+.BR AllocFile,
+and
+.BR AccountsFile.
+.BR nydus-cli
+may not work properly if these configuration parameters
+are not present in the configuration file.
 
 .SH "COMMANDS"
 

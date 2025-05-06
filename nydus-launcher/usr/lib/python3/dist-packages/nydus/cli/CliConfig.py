@@ -6,16 +6,23 @@ from nydus.common.Config import Config
 # Remember this needs to be the same as the server config file
 CLI_CONFIG_FILE = "/etc/nydus/nydus-server.conf"
 
+# Because Cli reads from the nydus-server configuration file,
+# there will be configuration items it doesn't need.
+# All the parameter names have to be included in the CliConfig
+# class so it recognises them as valid, but the class
+# only includes validation and getter methods for configuration
+# that nydus-cli will actually use.
+
 IPADDR = "IpAddr"
 PORT = "Port"
 CERTFILE = "CertFile"
 CERTPRIVKEY = "CertPrivKey"
 MCVERSION = "McVersion"
-MSALCID = "MSALClientID"
+MSALCID = "MSALClientId"
 ALLOCFILE = "AllocFile"
 ACCOUNTSFILE = "AccountsFile"
 
-SERVER_PARNAMES = [
+CLI_PARNAMES = [
     IPADDR, 
     PORT,
     CERTFILE,
@@ -37,13 +44,12 @@ CLI_DEFCONFIG = {
     ACCOUNTSFILE: "/etc/nydus/ms-usernames.txt",
 }
 
-# Maps between the parameter name used in the config file
-# and the attribute name used in the Config class
-# In the case of Nydus Cli, there may be
-# configuration items present in the configuration file
-# which the Cli does not need to store. Only data which
-# needs to be stored appears in the VARNAMES dictionary.
 CLI_VARNAMES = {
+    IPADDR: "ip_addr",
+    PORT: "port",
+    CERTFILE: "cert_file",
+    CERTPRIVKEY: "cert_privkey",
+    MCVERSION: "mc_version",
     MSALCID: "msal_cid",
     ALLOCFILE: "alloc_file",
     ACCOUNTSFILE: "accounts_file",
@@ -52,7 +58,7 @@ CLI_VARNAMES = {
 class CliConfig(Config):
 
     def __init__(self, path=CLI_CONFIG_FILE, parnames=CLI_PARNAMES, defconfig=CLI_DEFCONFIG, varnames=CLI_VARNAMES):
-        super().__init(path, parnames, defconfig, varnames)
+        super().__init__(path, parnames, defconfig, varnames)
 
     def validate_config(self):
         if not validity.is_valid_msal_cid(self.msal_cid):

@@ -121,7 +121,7 @@ def cleanup_helper(cfg, app):
 
     renew_tokens(cfg, app, alloc_engine)
     alloc_engine.release_expired()
-    release_unused_accounts(cfg)
+    release_unused_accounts(cfg, alloc_engine)
 
 """
 Looks for access tokens in the alloc db which are close to expiring,
@@ -180,7 +180,7 @@ Looks for accounts which are allocated to IP addresses/system users
 which aren't in use right now (therefore the Minecraft account
 can't be in use) and releases them.
 """
-def release_unused_accounts(cfg):
+def release_unused_accounts(cfg, alloc_engine):
     logins = SSHLogins()
     all_accounts = alloc_engine.get_accounts()
 

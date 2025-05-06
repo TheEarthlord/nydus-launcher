@@ -6,6 +6,7 @@ from nydus.common.validity import TIME_FORMAT
 from nydus.common.MCAccount import MCAccount
 from nydus.common.AccessToken import AccessToken
 from nydus.common.AccountAuthTokens import AccountAuthTokens
+from nydus.common import validity
 
 # Decides which account to give to a client requesting an account.
 # Stores the currently allocated accounts in a file.
@@ -403,16 +404,16 @@ class AllocEngine:
     """
     def __init__(self, path):
         if not isinstance(path, str):
-            raise TypeError("Path to accounts database file must be a string. Was {}".format(path))
+            raise TypeError("Path to allocation database file must be a string. Was {}".format(path))
 
         if not os.path.isfile(path):
-            raise FileNotFoundError("Path to accounts database file must exist. Was {}".format(path))
+            raise FileNotFoundError("Path to allocation database file must exist. Was {}".format(path))
 
         try:
-            with open(path, "r+") as f:
+            with open(path, "r") as f:
                 pass
         except PermissionError:
-            raise PermissionError("Accounts database file was not readable. Given path is {}".format(path))
+            raise PermissionError("Allocation database file was not readable. Given path is {}".format(path))
         
         self.path = path
         self.accounts = []
@@ -466,12 +467,15 @@ class AllocEngine:
         return AllocEngine.list_to_string(to_view)
 
     def write_changes(self):
-        with open(path, "w") as f:
-            f.write(str(self))
-            f.flush()
+        try:
+            with open(self.path, "w") as f:
+                f.write(str(self))
+                f.flush()
+        except PermissionError:
+            raise PermissionError("Could not write to allocation database file. Given path is {}".format(self.path))
 
     def load_alloc_db(self):
-        with open(path, "r") as f:
+        with open(self.path, "r") as f:
 
             first_line = True
             for line in f:
