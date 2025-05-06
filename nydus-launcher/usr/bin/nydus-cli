@@ -176,7 +176,7 @@ def cli_main(cfg):
         allocengine.release_account_ip(data)
     elif command == CREATE:
         app = netauth.create_msal_app(cfg.get_msal_cid())
-        alloc_utils.create(cfg, app)
+        alloc_utils.initialise_accounts(cfg, app)
     elif command == CLEANUP:
         app = netauth.create_msal_app(cfg.get_msal_cid())
         alloc_utils.cleanup(cfg, app)

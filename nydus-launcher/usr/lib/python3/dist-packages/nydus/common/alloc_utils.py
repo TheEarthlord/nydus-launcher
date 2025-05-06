@@ -22,7 +22,7 @@ app: the MSAL PublicClientApplication this server will use in authentication
 Gets Microsoft usernames out of the accounts file, attempts to authenticate them,
 (interactively; the user needs to manully log accounts in when the server starts)
 creates the allocation db file using the accounts which authd successfully.
-The Config instance passed must specificall have accounts_file and alloc_file,
+The Config instance passed must specifically have accounts_file and alloc_file,
 which are both stored by ServerConfig and by CliConfig.
 Returns nothing
 """
