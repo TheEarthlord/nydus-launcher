@@ -7,12 +7,14 @@
 # Launch Minecraft using those jars and account details.
 
 import ssl
-from nydus.client.StatusMsg import StatusMsg
 import socket
+import threading
 import tkinter as tk
 from tkinter import ttk
-import threading
+import traceback
+
 from nydus.client import utils
+from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
 from nydus.client.MCVersion import MCVersion
 from nydus.common.MCAccount import MCAccount
@@ -38,7 +40,8 @@ WINDOW_TITLE = "Nydus Launcher"
 # Minecraft, so we can display status message boxes
 STATUS_MESSAGES = [
     StatusMsg(1, "Requesting Minecraft credentials from Server"),
-    StatusMsg(2, "Launching Minecraft"),
+    StatusMsg(2, "Downloading files for Minecraft"),
+    StatusMsg(3, "Launching Minecraft"),
 ]
 
 STATUS = 0
@@ -107,6 +110,19 @@ def next_status_window():
         else:
             STATUS += 1
 
+"""
+If an exception occurs, we want to display a message
+window which tells us about it.
+"""
+def error_window(error_msg):
+    assert validity.is_nonempty_str(error_msg)
+    root = tk.Tk(className=WINDOW_TITLE)
+    frame = ttk.Frame(root, padding=10)
+    frame.grid()
+    ttk.Label(frame, text=error_msg).grid(column=0, row=0)
+
+    root.mainloop()
+
 
 """
 After we close Minecraft, we establish another connection to
@@ -163,8 +179,6 @@ def request(ssock):
 
     ssock.close()
 
-    next_status_window()
-
     mc_version = parts[0]
     mc_username = parts[1]
     mc_uuid = parts[2]
@@ -184,6 +198,15 @@ def request(ssock):
     mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
 
     mc_instance = MCVersion(mc_version, mc_acc)
+
+
+    # Although launch() downloads all the files, we put a
+    # separate download step first so we can mark it out
+    # in the status window.
+    mc_instance.download_all()
+
+    next_status_window()
+
     mc_instance.launch()
 
 
@@ -221,6 +244,11 @@ def startup():
 
 def main():
     cfg = startup()
-    client_main(cfg)
+
+    try:
+        client_main(cfg)
+    except Exception:
+        error_msg = traceback.format_exc()
+        error_window(error_msg)
 
 main()
