@@ -17,6 +17,9 @@ XB_EXPIRY_FORMAT = XB_EXPIRY_SECONDS_FORMAT + XB_EXPIRY_SEPARATER + "%fZ"
 XB_EXPIRY_SUFFIX = "Z"
 MC_UUID_LEN = 32
 
+SYSTEM_UID_MIN = 0
+SYSTEM_UID_MAX = 60000
+
 # Fairly wide margin of error on lengths
 MC_TOK_MINLEN = 1000
 MC_TOK_MAXLEN = 1100
@@ -167,7 +170,6 @@ def is_valid_version(vers, num_segments):
         if not is_nonnegative_integer(seg):
             return False
     return True
-
 
 """
 Returns True if the given string is a valid
@@ -351,6 +353,26 @@ def is_valid_xbox_timestamp(ts):
         return False
 
     if not fractional_part.isdecimal():
+        return False
+
+    return True
+
+
+
+"""
+Returns True if the given value is a
+string representing an Linux-based system
+user ID (this is probably an integer between
+0 and 60000 inclusive), AND that uid must also
+represent a user that actually exists on the system.
+"""
+def is_valid_system_uid(uid):
+    if not is_limited_integer(uid, SYSTEM_UID_MIN, SYSTEM_UID_MAX):
+        return False
+
+    try:
+        pwdentry = pwd.getpwuid(int(uid))
+    except KeyError:
         return False
 
     return True

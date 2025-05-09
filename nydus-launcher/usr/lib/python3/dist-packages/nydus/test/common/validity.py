@@ -295,6 +295,36 @@ class TestLimitedInteger(unittest.TestCase):
         self.assertFalse(is_limited_integer(9248.00, 9000, 10000))
 
 
+class TestUid(unittest.TestCase):
+
+    def test_zero(self):
+        # is_valid_system_uid requires the uid to exist,
+        # but 0 should always exist
+        self.assertTrue(is_valid_system_uid("0"))
+
+    def test_all(self):
+        all_users = pwd.getpwall()
+        for user in all_users:
+            self.assertTrue(is_valid_system_uid(str(user.pw_uid)))
+
+    def test_fail1(self):
+        self.assertFalse(is_valid_system_uid("-1"))
+
+    def test_fail2(self):
+        self.assertFalse(is_valid_system_uid("60001"))
+
+    def test_fail3(self):
+        self.assertFalse(is_valid_system_uid("-356"))
+
+    def test_fail4(self):
+        self.assertFalse(is_valid_system_uid("root"))
+
+    def test_fail5(self):
+        self.assertFalse(is_valid_system_uid("ertos"))
+
+    def test_fail6(self):
+        self.assertFalse(is_valid_system_uid("firstname34lastname"))
+
 class TestVersion(unittest.TestCase):
 
     def test_two(self):
