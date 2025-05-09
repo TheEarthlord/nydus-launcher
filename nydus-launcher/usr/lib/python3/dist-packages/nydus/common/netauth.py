@@ -5,6 +5,7 @@ import multiprocessing
 import pwd
 import os
 from msal import PublicClientApplication
+from msal import SerializableTokenCache
 from nydus.common.MCAccount import MCAccount
 from nydus.common import validity
 from nydus.common.AccessToken import AccessToken
@@ -303,6 +304,7 @@ def get_minecraft_details(access_token):
     return MCAccount(mc_username, mc_uuid, access_token.get_token())
 
 """
+queue: a multiprocessing.Queue shared with the master process that spawned us
 username: string, a Microsoft account username (email address)
 app: an MSALPublicClientApplication which will be used to authenticate
     the Microsoft account
@@ -314,7 +316,7 @@ because it has to run as a subprocess so it can downgrade
 to a non-root user to open a browser, without affecting
 the main process's root status.
 """
-def get_tok_msal_interactive(username, app, browser_uid)
+def get_tok_msal_interactive(queue, username, app, browser_uid)
 
     pwdentry = pwd.getpwuid(browser_uid)
     home = pwdentry.pw_dir
@@ -325,8 +327,11 @@ def get_tok_msal_interactive(username, app, browser_uid)
 
     # Auth
     result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
-    
-    # TODO somehow return the result
+
+    # Send the token cache containing the hopefully authd
+    # account back to the main process
+    cache = app.token_cache
+    queue.put(cache.serialize())
 
 
 """
@@ -350,6 +355,7 @@ def get_tok_msal(username, app, cfg, interactive_allowed=True):
     accounts = app.get_accounts()
     result = None
 
+    # First try to get the token from the existing app cache
     if accounts:
         # Using .get so we'll receive None if the key is absent
         found = [acc for acc in accounts if acc.get("username") == username]
@@ -357,16 +363,40 @@ def get_tok_msal(username, app, cfg, interactive_allowed=True):
         if found:
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
 
+    # If we didn't get the token from the existing app cache
+    # and we can do interactive authentication, do that.
+
     # acquire_token_interactive doesn't work when run as root; it needs a browser.
     # we create a subprocess which can change its uid and environment independent
     # of the main process, then do the interactive auth using a browser as a
     # different user.
     if not result and interactive_allowed:
+        queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=get_tok_msal_interactive,
-            args=(username, app, cfg.get_browser_uid())
+            args=(queue, username, app, cfg.get_browser_uid())
+        )
         p.start()
         p.join()
+
+        # Get the token cache from the copy of the app
+        # held by the subprocess and with it overwrite the
+        # token cache for the app held by the main process
+        sub_cache = queue.get()
+        app.token_cache.deserialize(sub_cache)
+        queue.close()
+
+        # Now check the app cache for a token which might have been
+        # placed there by interactive auth
+        accounts = app.get_accounts()
+
+        if accounts:
+            # Using .get so we'll receive None if the key is absent
+            found = [acc for acc in accounts if acc.get("username") == username]
+
+            if found:
+                result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
+
 
     if not result:
         raise ValueError("Could not authenticate account through MSAL: {}. Consider using interactive authentication, e.g. through Nydus Cli".format(username))
@@ -469,7 +499,8 @@ def create_msal_app(client_id):
 
     app = PublicClientApplication(
         client_id,
-        authority = AUTHORITY_URL
+        authority = AUTHORITY_URL,
+        token_cache=SerializableTokenCache()
     )
 
     return app
