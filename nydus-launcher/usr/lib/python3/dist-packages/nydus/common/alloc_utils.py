@@ -35,7 +35,7 @@ def initialise_accounts(cfg, app):
         raise TypeError("Must pass an MSAL PublicClientApplication to initialise_accounts. Got a {}".format(type(app)))
 
     username_list = read_accounts_file(cfg.get_accounts_file())
-    auth_dict = netauth.auth_all(username_list, app, interactive_allowed=True)
+    auth_dict = netauth.auth_all(username_list, app, cfg, interactive_allowed=True)
     authed_aats = [aat for aat in auth_dict.values() if aat != None]
     failed_aats = [aat for aat in auth_dict.values() if aat == None]
     print("From {} requested Microsoft accounts, the following {} were authenticated.".format(len(username_list), len(authed_aats)))

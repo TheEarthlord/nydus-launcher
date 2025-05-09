@@ -1,6 +1,9 @@
 
 import requests
 import datetime
+import multiprocessing
+import pwd
+import os
 from msal import PublicClientApplication
 from nydus.common.MCAccount import MCAccount
 from nydus.common import validity
@@ -8,11 +11,12 @@ from nydus.common.AccessToken import AccessToken
 from nydus.common.MCAccount import MCAccount
 from nydus.common.AccountAuthTokens import AccountAuthTokens
 
+# Home dir environment variable name
+HOME_KEY = "HOME"
+
 # Utilities for authenticating to endpoints over the internet;
 # Microsoft, Xbox, and Minecraft
 # Used in getting and updating access tokens
-
-MSAL_CLIENT_ID = ""
 
 SCOPES_NEEDED = ["XboxLive.signin"]
 
@@ -298,10 +302,37 @@ def get_minecraft_details(access_token):
 
     return MCAccount(mc_username, mc_uuid, access_token.get_token())
 
+"""
+username: string, a Microsoft account username (email address)
+app: an MSALPublicClientApplication which will be used to authenticate
+    the Microsoft account
+browser_uid: integer, uid of an account on the local system which
+    will be used to do the interactive authentication (open a browser)
+Function which handles invoking MSAL PublicClientApplication's
+interactive token acquisition. Needs to be a separate function
+because it has to run as a subprocess so it can downgrade
+to a non-root user to open a browser, without affecting
+the main process's root status.
+"""
+def get_tok_msal_interactive(username, app, browser_uid)
+
+    pwdentry = pwd.getpwuid(browser_uid)
+    home = pwdentry.pw_dir
+    
+    # Downgrade from root
+    os.environ[HOME_KEY] = home
+    os.setuid(browser_uid)
+
+    # Auth
+    result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
+    
+    # TODO somehow return the result
+
 
 """
 username: string, a Microsoft account username (email address)
 app: an MSAL PublicClientApplication which will be used to authenticate the Microsoft account
+cfg: a nydus ServerConfig or CliConfig instance
 interactive_allowed: boolean. If True, this function may trigger a browser window to
     be opened so the Microsoft account can be authenticated manually. If False,
     this won't be done, but in that case the token can only be successfully obtained
@@ -309,7 +340,7 @@ interactive_allowed: boolean. If True, this function may trigger a browser windo
 This function acquires an MSAL token used for later authentication to Xbox and Minecraft.
 It returns an AccessToken object containing that token.
 """
-def get_tok_msal(username, app, interactive_allowed=True):
+def get_tok_msal(username, app, cfg, interactive_allowed=True):
     if not validity.is_valid_microsoft_username(username):
         raise ValueError("Must pass a valid Microsoft username (email address) to get_tok_msal. Was given {}".format(username))
 
@@ -317,26 +348,28 @@ def get_tok_msal(username, app, interactive_allowed=True):
         raise ValueError("Must pass an MSAL PublicClientApplication to get_tok_msal. Got a {}".format(type(app)))
 
     accounts = app.get_accounts()
-
     result = None
 
     if accounts:
-
         # Using .get so we'll receive None if the key is absent
         found = [acc for acc in accounts if acc.get("username") == username]
 
         if found:
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
 
-    # TODO
-    # acquire_token_interactive, which uses a browser, seems
-    # to not work when run as root.
-    # Think about what user should do what on the nydus server program
+    # acquire_token_interactive doesn't work when run as root; it needs a browser.
+    # we create a subprocess which can change its uid and environment independent
+    # of the main process, then do the interactive auth using a browser as a
+    # different user.
     if not result and interactive_allowed:
-        result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
+        p = multiprocessing.Process(
+            target=get_tok_msal_interactive,
+            args=(username, app, cfg.get_browser_uid())
+        p.start()
+        p.join()
 
     if not result:
-        raise ValueError("Could not authenticate account through MSAL: {}. Consider enabling interactive authentication.".format(username))
+        raise ValueError("Could not authenticate account through MSAL: {}. Consider using interactive authentication, e.g. through Nydus Cli".format(username))
     if not MSAL_TOKEN_KEY in result:
         error_msg = ""
         error_msg = ", ".join([result[key] for key in MSAL_ERROR_KEYS if key in result])
@@ -359,6 +392,7 @@ def get_tok_msal(username, app, interactive_allowed=True):
 """
 username: string, a Microsoft account username (email address)
 app: an MSAL PublicClientApplication which will be used to authenticate the Microsoft account
+cfg: a nydus ServerConfig or CliConfig instance
 interactive_allowed: boolean. If True, this function may trigger a browser window to
     be opened so the Microsoft account can be authenticated manually. If False,
     this won't be done, but in that case the token can only be successfully obtained
@@ -369,8 +403,8 @@ and Minecraft.
 If successful, returns an AccountAuthTokens instance containing all data and tokens
 about the account authenticated.
 """
-def auth_stream(username, app, interactive_allowed=True):
-    msal_at = get_tok_msal(username, app, interactive_allowed)
+def auth_stream(username, app, cfg, interactive_allowed=True):
+    msal_at = get_tok_msal(username, app, cfg, interactive_allowed)
     xbl_at = get_tok_xboxlive(msal_at)
     xsts_at = get_tok_xsts(xbl_at)
     minecraft_at = get_tok_minecraft(xsts_at)
@@ -383,6 +417,7 @@ def auth_stream(username, app, interactive_allowed=True):
 username_list: a list of strings, each string being a Microsoft account username (email address)
 app: an MSAL PublicClientApplication which will be used to authenticate the Microsoft
 accounts in the given list.
+cfg: a nydus ServerConfig or CliConfig instance
 interactive_allowed: boolean. If True, this function may trigger browser windows
     opening so the Microsoft accounts can be authenticated manually. If False,
     no interactive authentication will be attempted, but in that case the authentication
@@ -397,7 +432,7 @@ This function catches exceptions thrown by authentication procedures;
 if attempting to authenticate an account causes an exception that authentication
 will be considered failed, and the next account in the list will be attempted.
 """
-def auth_all(username_list, app, interactive_allowed=True):
+def auth_all(username_list, app, cfg, interactive_allowed=True):
     assert isinstance(username_list, list), "Must pass a list of usernames to auth_all. Instead, a {} was passed.".format(type(username_list))
     for username in username_list:
         assert isinstance(username, str), "Expected a list of strings in the username list given to auth_all. Instead, found '{}' of type {}".format(username, type(username))
@@ -408,7 +443,7 @@ def auth_all(username_list, app, interactive_allowed=True):
 
     for username in username_list:
         try:
-            tokens = auth_stream(username, app, interactive_allowed)
+            tokens = auth_stream(username, app, cfg, interactive_allowed)
         except Exception:
             # Authentication failed somehow
             tokens = None
