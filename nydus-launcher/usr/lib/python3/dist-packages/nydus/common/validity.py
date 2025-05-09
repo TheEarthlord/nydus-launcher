@@ -18,7 +18,7 @@ XB_EXPIRY_SUFFIX = "Z"
 MC_UUID_LEN = 32
 
 SYSTEM_UID_MIN = 0
-SYSTEM_UID_MAX = 60000
+SYSTEM_UID_MAX = 70000
 
 # Fairly wide margin of error on lengths
 MC_TOK_MINLEN = 1000
@@ -362,8 +362,8 @@ def is_valid_xbox_timestamp(ts):
 """
 Returns True if the given value is a
 string representing an Linux-based system
-user ID (this is probably an integer between
-0 and 60000 inclusive), AND that uid must also
+user ID (we look for an integer between 0 and 70000
+inclusive to be on the safe side), AND that uid must also
 represent a user that actually exists on the system.
 """
 def is_valid_system_uid(uid):
