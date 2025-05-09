@@ -100,6 +100,23 @@ Special versions like OptiFine versions may be used here, provided
 the right version of OptiFine is installed on the client machine.
 .RE
 
+.SS BrowserUid
+.RS 2
+In order for MSAL (Microsoft Authentication Libraries) to
+authenticate Microsoft accounts interactively, a browser needs
+to be opened. While the Nydus Launcher in general runs as root
+because it needs access to the certificates used for encrypted
+client-server communication, browsers should not and often cannot
+be run as root for a variety of reasons.
+Instead, the interactive part of MSAL authentication will be done
+as the user corresponding to the UID given with the BrowserUid
+parameter. This user should be the one who is logged in to a
+graphical interface when invoking
+.BR nydus-server
+or
+.BR nydus-cli.
+.RE
+
 .SS MSALClientId
 .RS 2
 The Microsoft Azure Client ID used to access MSAL 
