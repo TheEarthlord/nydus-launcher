@@ -316,7 +316,7 @@ because it has to run as a subprocess so it can downgrade
 to a non-root user to open a browser, without affecting
 the main process's root status.
 """
-def get_tok_msal_interactive(queue, username, app, browser_uid)
+def get_tok_msal_interactive(queue, username, app, browser_uid):
 
     pwdentry = pwd.getpwuid(browser_uid)
     home = pwdentry.pw_dir

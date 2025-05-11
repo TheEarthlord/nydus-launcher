@@ -78,7 +78,10 @@ class CliConfig(Config):
             raise ValueError("Value for {} is not a file, cannot be found, or cannot be read: {}".format(ACCOUNTSFILE, self.accounts_file))
 
     def get_browser_uid(self):
-        return self.browser_uid
+        # browser UID will need to be an int for most
+        # purposes, but it'll be a string when read out
+        # of the config file, so we convert it here.
+        return int(self.browser_uid)
 
     def get_msal_cid(self):
         return self.msal_cid

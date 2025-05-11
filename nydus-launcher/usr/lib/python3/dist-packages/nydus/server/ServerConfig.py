@@ -101,7 +101,10 @@ class ServerConfig(Config):
         return self.mc_version
 
     def get_browser_uid(self):
-        return self.browser_uid
+        # UID needs to be in int form for most uses,
+        # but it'll be a string from reading the config
+        # file, so we convert it.
+        return int(self.browser_uid)
 
     def get_msal_cid(self):
         return self.msal_cid
