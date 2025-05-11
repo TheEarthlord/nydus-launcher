@@ -1,4 +1,3 @@
-etc/nydus/nydus-client.conf
 usr/bin/nydus-client
 usr/lib/python3/dist-packages/nydus/client/ClientConfig.py
 usr/lib/python3/dist-packages/nydus/client/DownloadFile.py

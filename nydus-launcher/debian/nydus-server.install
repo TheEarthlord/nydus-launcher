@@ -1,6 +1,3 @@
-etc/nydus/ms-usernames.txt
-etc/nydus/nydus-alloc.csv
-etc/nydus/nydus-server.conf
 usr/bin/nydus-server
 usr/lib/python3/dist-packages/nydus/server/ServerConfig.py
 usr/lib/systemd/system/nydus-server.service
