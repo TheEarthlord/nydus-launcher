@@ -1,6 +1,5 @@
 nydus-launcher (1.0.7) jammy; urgency=medium
 
-  * Separated out configuration files
   * Changed authentication browser to open from a subprocess
 
  -- Christopher Irving <the.earthlord3@gmail.com>  Sun, 11 May 2025 15:09:51 +1000
