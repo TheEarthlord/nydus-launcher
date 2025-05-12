@@ -369,7 +369,7 @@ def msal_interactive_auth(username_list, app, cfg):
     new_cache = None
     while True:
 
-        chunk = q.get()
+        chunk = queue.get()
 
         if chunk == SEND_DONE:
             # We have everything from the subprocess
