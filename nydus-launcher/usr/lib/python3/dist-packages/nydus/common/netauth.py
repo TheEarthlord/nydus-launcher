@@ -12,8 +12,14 @@ from nydus.common.AccessToken import AccessToken
 from nydus.common.MCAccount import MCAccount
 from nydus.common.AccountAuthTokens import AccountAuthTokens
 
-# Home dir environment variable name
+# Data for the subprocess that does
+# MSAL interactive auth
 HOME_KEY = "HOME"
+DBUS_KEY = "DBUS_SESSION_BUS_ADDRESS"
+DBUS_VALUE = "unix:path=/run/user/{}/bus"
+CHUNK_SIZE = 1024
+SEND_DONE = "LASTCHUNKSENT"
+
 
 # Utilities for authenticating to endpoints over the internet;
 # Microsoft, Xbox, and Minecraft
@@ -305,7 +311,7 @@ def get_minecraft_details(access_token):
 
 """
 queue: a multiprocessing.Queue shared with the master process that spawned us
-username: string, a Microsoft account username (email address)
+usernames: a list of strings; Microsoft account usernames to authenticate
 app: an MSALPublicClientApplication which will be used to authenticate
     the Microsoft account
 browser_uid: integer, uid of an account on the local system which
@@ -316,22 +322,71 @@ because it has to run as a subprocess so it can downgrade
 to a non-root user to open a browser, without affecting
 the main process's root status.
 """
-def get_tok_msal_interactive(queue, username, app, browser_uid):
+def msal_interactive_subproc(queue, username_list, app, browser_uid):
 
     pwdentry = pwd.getpwuid(browser_uid)
     home = pwdentry.pw_dir
     
     # Downgrade from root
+    os.environ[DBUS_KEY] = DBUS_VALUE.format(browser_uid)
     os.environ[HOME_KEY] = home
     os.setuid(browser_uid)
 
-    # Auth
-    result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
+    for username in username_list:
+        # Auth
+        result = app.acquire_token_interactive(scopes=SCOPES_NEEDED, login_hint=username)
 
     # Send the token cache containing the hopefully authd
     # account back to the main process
     cache = app.token_cache
-    queue.put(cache.serialize())
+    serial_cache = cache.serialize()
+
+    # The cache for all the accounts is likely too
+    # big for a single queue.put()
+
+    chunks = len(serial_cache) // CHUNK_SIZE + 1
+
+    for i in range(chunks):
+        chunk = serial_cache[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE]
+        queue.put(chunk)
+
+    queue.put(SEND_DONE)
+    queue.close()
+
+
+def msal_interactive_auth(username_list, app, cfg):
+    # acquire_token_interactive doesn't work when run as root; it needs a browser.
+    # we create a subprocess which can change its uid and environment independent
+    # of the main process, then do the interactive auth using a browser as a
+    # different user.
+    queue = multiprocessing.Queue()
+    p = multiprocessing.Process(
+        target=msal_interactive_subproc,
+        args=(queue, username_list, app, cfg.get_browser_uid())
+    )
+    p.start()
+    
+    new_cache = None
+    while True:
+
+        chunk = q.get()
+
+        if chunk == SEND_DONE:
+            # We have everything from the subprocess
+            break
+        
+        if new_cache == None:
+            new_cache = chunk
+        else:
+            new_cache += chunk
+
+    p.join()
+
+    # Get the token cache from the copy of the app
+    # held by the subprocess and with it overwrite the
+    # token cache for the app held by the main process
+    app.token_cache.deserialize(new_cache)
+    queue.close()
 
 
 """
@@ -345,7 +400,7 @@ interactive_allowed: boolean. If True, this function may trigger a browser windo
 This function acquires an MSAL token used for later authentication to Xbox and Minecraft.
 It returns an AccessToken object containing that token.
 """
-def get_tok_msal(username, app, cfg, interactive_allowed=True):
+def get_tok_msal(username, app):
     if not validity.is_valid_microsoft_username(username):
         raise ValueError("Must pass a valid Microsoft username (email address) to get_tok_msal. Was given {}".format(username))
 
@@ -355,48 +410,13 @@ def get_tok_msal(username, app, cfg, interactive_allowed=True):
     accounts = app.get_accounts()
     result = None
 
-    # First try to get the token from the existing app cache
+    # Try to get the token from the existing cache
     if accounts:
         # Using .get so we'll receive None if the key is absent
         found = [acc for acc in accounts if acc.get("username") == username]
 
         if found:
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
-
-    # If we didn't get the token from the existing app cache
-    # and we can do interactive authentication, do that.
-
-    # acquire_token_interactive doesn't work when run as root; it needs a browser.
-    # we create a subprocess which can change its uid and environment independent
-    # of the main process, then do the interactive auth using a browser as a
-    # different user.
-    if not result and interactive_allowed:
-        queue = multiprocessing.Queue()
-        p = multiprocessing.Process(
-            target=get_tok_msal_interactive,
-            args=(queue, username, app, cfg.get_browser_uid())
-        )
-        p.start()
-        p.join()
-
-        # Get the token cache from the copy of the app
-        # held by the subprocess and with it overwrite the
-        # token cache for the app held by the main process
-        sub_cache = queue.get()
-        app.token_cache.deserialize(sub_cache)
-        queue.close()
-
-        # Now check the app cache for a token which might have been
-        # placed there by interactive auth
-        accounts = app.get_accounts()
-
-        if accounts:
-            # Using .get so we'll receive None if the key is absent
-            found = [acc for acc in accounts if acc.get("username") == username]
-
-            if found:
-                result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
-
 
     if not result:
         raise ValueError("Could not authenticate account through MSAL: {}. Consider using interactive authentication, e.g. through Nydus Cli".format(username))
@@ -433,8 +453,8 @@ and Minecraft.
 If successful, returns an AccountAuthTokens instance containing all data and tokens
 about the account authenticated.
 """
-def auth_stream(username, app, cfg, interactive_allowed=True):
-    msal_at = get_tok_msal(username, app, cfg, interactive_allowed)
+def auth_stream(username, app):
+    msal_at = get_tok_msal(username, app)
     xbl_at = get_tok_xboxlive(msal_at)
     xsts_at = get_tok_xsts(xbl_at)
     minecraft_at = get_tok_minecraft(xsts_at)
@@ -470,10 +490,18 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
     assert isinstance(app, PublicClientApplication), "Must pass an MSAL PublicClientApplication to auth_all. Instead, a {} was passed.".format(type(app))
 
     auth_results = {}
+    
+    # If interactive MSAL authentication is allowed,
+    # we have to do it at the same time for everyone,
+    # so we do that first.
+
+    if interactive_allowed:
+        msal_interactive_auth(username_list, app, cfg)
+
 
     for username in username_list:
         try:
-            tokens = auth_stream(username, app, cfg, interactive_allowed)
+            tokens = auth_stream(username, app)
         except Exception:
             # Authentication failed somehow
             tokens = None
