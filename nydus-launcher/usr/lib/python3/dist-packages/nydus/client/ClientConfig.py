@@ -45,7 +45,10 @@ class ClientConfig(Config):
         return self.server_ip
 
     def get_port(self):
-        return self.port
+        # Port needs to be in int form for most uses,
+        # but it'll be a string from reading the config
+        # file, so we convert it.
+        return int(self.port)
 
     def get_ca_chain(self):
         return self.ca_chain

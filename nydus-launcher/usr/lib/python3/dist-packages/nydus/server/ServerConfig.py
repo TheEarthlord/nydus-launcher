@@ -89,7 +89,10 @@ class ServerConfig(Config):
         return self.ip_addr
 
     def get_port(self):
-        return self.port
+        # Port needs to be in int form for most uses,
+        # but it'll be a string from reading the config
+        # file, so we convert it.
+        return int(self.port)
 
     def get_cert_file(self):
         return self.cert_file

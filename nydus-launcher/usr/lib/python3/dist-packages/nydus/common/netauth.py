@@ -4,6 +4,7 @@ import datetime
 import multiprocessing
 import pwd
 import os
+import traceback
 from msal import PublicClientApplication
 from msal import SerializableTokenCache
 from nydus.common.MCAccount import MCAccount
@@ -99,6 +100,7 @@ def parse_xbox_timestamp(ts):
     
     # Only keep 6 digits of the fractional part
     fractional_part = fractional_part.rstrip(validity.XB_EXPIRY_SUFFIX)
+    fractional_part = int(fractional_part)
     fractional_part = "{:06d}".format(fractional_part)
 
     fixed_ts = "{}{}{}{}".format(seconds_part, validity.XB_EXPIRY_SEPARATER, fractional_part, validity.XB_EXPIRY_SUFFIX)
@@ -268,7 +270,7 @@ def get_tok_minecraft(access_token):
     else:
         raise KeyError("Key {} was missing from Minecraft authentication response. Response was {}".format(MC_EXPIRES_KEY, mc_json))
 
-    if validity.is_integer(mc_expiry_offset):
+    if isinstance(mc_expiry_offset, int) or validity.is_integer(mc_expiry_offset):
         expiry_dt = datetime.datetime.now() + datetime.timedelta(seconds = int(mc_expiry_offset))
     else:
         raise ValueError("Value of {} from Minecraft authentication response should be an integer representing seconds. Instead, was {}".format(MC_EXPIRES_KEY, mc_expiry_offset))
@@ -381,12 +383,13 @@ def msal_interactive_auth(username_list, app, cfg):
             new_cache += chunk
 
     p.join()
+    queue.close()
 
     # Get the token cache from the copy of the app
     # held by the subprocess and with it overwrite the
     # token cache for the app held by the main process
     app.token_cache.deserialize(new_cache)
-    queue.close()
+
 
 
 """
@@ -408,14 +411,18 @@ def get_tok_msal(username, app):
         raise ValueError("Must pass an MSAL PublicClientApplication to get_tok_msal. Got a {}".format(type(app)))
 
     accounts = app.get_accounts()
+    
     result = None
 
     # Try to get the token from the existing cache
     if accounts:
         # Using .get so we'll receive None if the key is absent
-        found = [acc for acc in accounts if acc.get("username") == username]
+        # Using .lower to ignore capitalisation inconsistencies
+        found = [acc for acc in accounts if acc.get("username").lower() == username.lower()]
 
         if found:
+            print("Found get_accounts entry for {}; attempting silent token".format(username))
+            print()
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
 
     if not result:
@@ -432,7 +439,7 @@ def get_tok_msal(username, app):
     else:
         raise KeyError("Key {} was missing from MSAL authentication response. Response was {}".format(MSAL_EXPIRES_KEY, result))
 
-    if validity.is_integer(expiry_offset):
+    if isinstance(expiry_offset, int) or validity.is_integer(expiry_offset):
         expiry_dt = datetime.datetime.now() + datetime.timedelta(seconds = int(expiry_offset))
     else:
         raise ValueError("Value of {} from MSAL authentication response should be an integer representing seconds. Instead, was {}".format(MSAL_EXPIRES_KEY, expiry_offset))
@@ -489,6 +496,8 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
 
     assert isinstance(app, PublicClientApplication), "Must pass an MSAL PublicClientApplication to auth_all. Instead, a {} was passed.".format(type(app))
 
+    print("Beginning to attempt authentication of accounts.")
+
     auth_results = {}
     
     # If interactive MSAL authentication is allowed,
@@ -498,12 +507,16 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
     if interactive_allowed:
         msal_interactive_auth(username_list, app, cfg)
 
-
     for username in username_list:
         try:
             tokens = auth_stream(username, app)
         except Exception:
             # Authentication failed somehow
+
+            error_msg = traceback.format_exc()
+            print("Failed to auth user {} with the following error:".format(username))
+            print(error_msg)
+            print()
             tokens = None
         auth_results[username] = tokens
 

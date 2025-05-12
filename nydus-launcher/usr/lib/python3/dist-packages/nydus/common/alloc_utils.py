@@ -97,7 +97,7 @@ def cleanup(cfg, app, thread_lock=None):
     if not isinstance(app, PublicClientApplication):
         raise TypeError("Must pass an MSAL PublicClientApplication to initialise_accounts. Got a {}".format(type(app)))
 
-    if thread_lock != None and not isinstance(thread_lock, threading.Lock):
+    if thread_lock != None and not isinstance(thread_lock, type(threading.Lock())):
         raise TypeError("Must pass a threading.Lock or None to function cleanup. Got a {}".format(type(thread_lock)))
 
     # TODO

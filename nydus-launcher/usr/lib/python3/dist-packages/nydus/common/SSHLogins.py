@@ -12,12 +12,12 @@ from nydus.common import validity
 # username space tty space date space time space (ipaddr)
 # So when split by whitespace we expect 5 fields
 
-LOGINS_COMMAND = "who"
-WHO_FIELDS = 5
+LOGINS_COMMAND = "/usr/bin/who"
+WHO_FIELDS = 4
 USERNAME_FIELD = 0
 IPADDR_FIELD = 4
-assert USERNAME_FIELD < WHO_FIELDS
-assert IPADDR_FIELD < WHO_FIELDS
+assert USERNAME_FIELD < WHO_FIELDS+1
+assert IPADDR_FIELD < WHO_FIELDS+1
 
 class SSHSession:
 
@@ -85,8 +85,17 @@ class SSHLogins:
         
         for line in lines:
             parts = line.split()
-            if len(parts) != WHO_FIELDS:
-                raise IndexError("Expected {} whitespace-separated fields in output of '{}', but got {}".format(WHO_FIELDS, LOGINS_COMMAND, len(parts)))
+
+            # There are three possibilities for lines in 'who'
+            # 1) A local user with a display; 5 parts to the line and the 5th is the display number. Skip.
+            # 2) An ssh user; 5 parts to the line and the 5th is the origin IP address. We want to find all of these.
+            # 3) A local user without a display; 4 parts to the line. Skip.
+
+            if len(parts) == WHO_FIELDS:
+                continue
+
+            if len(parts) != WHO_FIELDS + 1:
+                raise IndexError("Expected {} or {} whitespace-separated fields in output of '{}', but got {}".format(WHO_FIELDS, WHO_FIELDS+1, LOGINS_COMMAND, len(parts)))
 
             username = parts[USERNAME_FIELD]
             origin = parts[IPADDR_FIELD]
