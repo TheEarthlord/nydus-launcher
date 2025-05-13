@@ -91,7 +91,7 @@ Returns a datetime representing the same time.
 """
 def parse_xbox_timestamp(ts):
     if not validity.is_valid_xbox_timestamp(ts):
-        raise ValueError("Object given to parse_xbox_timestamp was not an Xbox timestamp. Should have been of the form {} but was given {}".format(XB_EXPIRY_FORMAT, ts))
+        raise ValueError("Object given to parse_xbox_timestamp was not an Xbox timestamp. Should have been of the form {} but was given {}".format(validity.XB_EXPIRY_FORMAT, ts))
 
     parts = ts.split(validity.XB_EXPIRY_SEPARATER)
     # We know there will be 2 parts because the timestamp validity check passed
@@ -101,7 +101,9 @@ def parse_xbox_timestamp(ts):
     # Only keep 6 digits of the fractional part
     fractional_part = fractional_part.rstrip(validity.XB_EXPIRY_SUFFIX)
     fractional_part = int(fractional_part)
-    fractional_part = "{:06d}".format(fractional_part)
+    # We have to slice out the first 6 digits because
+    # formatting doesn't restrict the number of digits to 6
+    fractional_part = "{:06}".format(fractional_part)[:6]
 
     fixed_ts = "{}{}{}{}".format(seconds_part, validity.XB_EXPIRY_SEPARATER, fractional_part, validity.XB_EXPIRY_SUFFIX)
     xbox_datetime = datetime.datetime.strptime(fixed_ts, validity.XB_EXPIRY_FORMAT)

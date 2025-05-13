@@ -325,9 +325,10 @@ This function validates that a given string
 is in the format used by Xbox authentication
 endpoints to represent a timestamp (mainly
 used for token expiry timestamps).
-The format includes a fractional part for
-seconds which may be 6 or 7 digits, and
-therefore is not easily parsed by datetime.
+The format includes a part for fractions of seconds
+which may be 6 or 7 digits (if 6 digits, it represents
+microseconds) and therefore is not easily parsed by
+datetime.
 """
 def is_valid_xbox_timestamp(ts):
     if not is_nonempty_str(ts):
