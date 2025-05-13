@@ -275,7 +275,9 @@ class AllocAccount:
             raise ValueError("Client username value is not a valid system username: {}".format(client_username))
 
     def set_alloc_time(self, alloc_time):
-        if alloc_time == "" or validator.is_valid_str_timestamp(alloc_time):
+        if alloc_time == "":
+            self.alloc_time = alloc_time
+        elif validator.is_valid_str_timestamp(alloc_time):
             self.alloc_time = datetime.datetime.strptime(alloc_time, TIME_FORMAT)
         else:
             raise ValueError("Alloc time value is not a valid timestamp: {}".format(alloc_time))
@@ -299,7 +301,7 @@ class AllocAccount:
         return self.aat
 
     def get_ms_username(self):
-        return self.aat.get_ms_username()
+        return self.aat.get_microsoft_username()
 
     """
     Specifically the token string, not the AccessToken object
@@ -378,13 +380,17 @@ class AllocAccount:
             self.get_xboxlive_expiry(),
             self.get_xsts_token(),
             self.get_xsts_expiry(),
+            self.get_xsts_hash(),
             self.get_mc_token(),
             self.get_mc_expiry(),
             self.get_mc_username(),
             self.get_mc_uuid(),
         ]
 
-        assert len(fields) == self.num_fields()
+        for i in range(len(fields)):
+            fields[i] = str(fields[i])
+
+        assert len(fields) == AllocAccount.num_fields()
         return ALLOC_DELIM.join(fields)
 
 """
