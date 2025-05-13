@@ -15,7 +15,7 @@ class TestXboxTimestamp(unittest.TestCase):
         dt = parse_xbox_timestamp(in_ts)
 
         self.assertTrue(isinstance(dt, datetime.datetime))
-        self.assertEqual(out_ts, str(dt))
+        self.assertEqual(out_ts, str(dt) + "Z")
 
     def test_simple2(self):
         in_ts = "2025-05-13T18:13:40.582230Z"
@@ -24,7 +24,7 @@ class TestXboxTimestamp(unittest.TestCase):
         dt = parse_xbox_timestamp(in_ts)
 
         self.assertTrue(isinstance(dt, datetime.datetime))
-        self.assertEqual(out_ts, str(dt))
+        self.assertEqual(out_ts, str(dt) + "Z")
 
     def test_simple3(self):
         in_ts = "2025-05-13T18:13:40.002230Z"
@@ -33,7 +33,7 @@ class TestXboxTimestamp(unittest.TestCase):
         dt = parse_xbox_timestamp(in_ts)
 
         self.assertTrue(isinstance(dt, datetime.datetime))
-        self.assertEqual(out_ts, str(dt))
+        self.assertEqual(out_ts, str(dt) + "Z")
 
     def test_simple4(self):
         in_ts = "2025-05-13T18:13:40.0022305Z"
@@ -42,7 +42,7 @@ class TestXboxTimestamp(unittest.TestCase):
         dt = parse_xbox_timestamp(in_ts)
 
         self.assertTrue(isinstance(dt, datetime.datetime))
-        self.assertEqual(out_ts, str(dt))
+        self.assertEqual(out_ts, str(dt) + "Z")
 
 
 if __name__ == "__main__":
