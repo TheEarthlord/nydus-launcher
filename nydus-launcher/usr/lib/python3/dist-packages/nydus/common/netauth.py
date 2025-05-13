@@ -100,7 +100,6 @@ def parse_xbox_timestamp(ts):
     
     # Only keep 6 digits of the fractional part
     fractional_part = fractional_part.rstrip(validity.XB_EXPIRY_SUFFIX)
-    fractional_part = int(fractional_part)
     # We have to slice out the first 6 digits because
     # formatting doesn't restrict the number of digits to 6
     fractional_part = "{:06}".format(fractional_part)[:6]
