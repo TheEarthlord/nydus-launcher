@@ -38,11 +38,14 @@ def initialise_accounts(cfg, app):
     auth_dict = netauth.auth_all(username_list, app, cfg, interactive_allowed=True)
     authed_aats = [aat for aat in auth_dict.values() if aat != None]
     failed_aats = [name for name in auth_dict if auth_dict[name] == None]
-    print("From {} requested Microsoft accounts, the following {} were authenticated.".format(len(username_list), len(authed_aats)))
+
+    if len(authed_aats) > 0:
+        print("From {} requested Microsoft accounts, the following {} were authenticated.".format(len(username_list), len(authed_aats)))
     for aat in authed_aats:
         print(aat.get_microsoft_username())
 
-    print("The following {} failed authentication.".format(len(failed_aats)))
+    if len(failed_aats) > 0:
+        print("From {} requested Microsoft accounts, the following {} failed authentication.".format(len(username_list), len(failed_aats)))
     for name in failed_aats:
         print(name)
 

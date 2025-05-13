@@ -422,8 +422,6 @@ def get_tok_msal(username, app):
         found = [acc for acc in accounts if acc.get("username").lower() == username.lower()]
 
         if found:
-            print("Found get_accounts entry for {}; attempting silent token".format(username))
-            print()
             result = app.acquire_token_silent(SCOPES_NEEDED, account=found[0])
 
     if not result:
@@ -497,7 +495,7 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
 
     assert isinstance(app, PublicClientApplication), "Must pass an MSAL PublicClientApplication to auth_all. Instead, a {} was passed.".format(type(app))
 
-    print("Beginning to attempt authentication of accounts.")
+    print("Beginning authentication of accounts")
 
     auth_results = {}
     

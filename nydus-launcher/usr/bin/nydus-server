@@ -160,6 +160,8 @@ def server_main(cfg, app):
     listen_thread = threading.Thread(target=server_listener, args=(cfg,))
     listen_thread.start()
 
+    print("Nydus Server listening for connections...")
+
     # Every so often trigger a thread to cleanup allocated accounts
     while True:
         cleanup_thread = threading.Thread(target=alloc_utils.cleanup, args=(cfg, app, ALLOCDB_LOCK))
@@ -171,6 +173,9 @@ def main():
     cfg = startup()
     app = netauth.create_msal_app(cfg.get_msal_cid())
     alloc_utils.initialise_accounts(cfg, app)
+
+    print("Account authentication and allocation database setup are complete.")
+
     server_main(cfg, app)
 
 main()
