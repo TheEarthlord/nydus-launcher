@@ -57,13 +57,13 @@ def check_window(root, msg_id):
     assert isinstance(root, tk.Tk), "Must pass a tkinter root for to check its status"
     assert isinstance(msg_id, int) and msg_id > 0, "Msg Id must be a positive integer"
 
-    with STATE_LOCK:
+    with STATUS_LOCK:
 
-        if STATE != msg_id:
+        if STATUS != msg_id:
             root.destroy()
 
         else:
-            root.after(CHECK_PERIOD, check_window, root, msg_id)
+            root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
 
 
 def make_window(status_msg):
@@ -75,7 +75,7 @@ def make_window(status_msg):
     frame = ttk.Frame(root, padding=10)
     frame.grid()
     ttk.Label(frame, text=msg_text).grid(column=0, row=0)
-    root.after(CHECK_PERIOD, check_window, root, msg_id)
+    root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
 
     root.mainloop()
 

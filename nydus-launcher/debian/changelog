@@ -1,3 +1,9 @@
+nydus-launcher (1.0.9) jammy; urgency=medium
+
+  * Server reaches listening phase
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 13 May 2025 13:35:45 +1000
+
 nydus-launcher (1.0.8) jammy; urgency=medium
 
   * MSAL authentication working

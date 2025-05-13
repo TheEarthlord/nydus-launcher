@@ -6,6 +6,7 @@ import random
 import datetime
 import threading
 import time
+import traceback
 from nydus.common.allocater import AllocEngine
 from nydus.server.ServerConfig import ServerConfig
 from nydus.common import validity
@@ -96,36 +97,48 @@ def client_exchange(cfg, conn, addr):
     # We don't want the clients to be able to consume all our memory
     # If they exceed this limit they're doing something wrong anyway.
 
-    recv_start = datetime.datetime.now()
-    while len(str_data) < MAXMSG:
+    # Cover the whole communication in try/except
+    # so that if something goes wrong we can still close the 
+    # connection as a signal to the client.
+    try:
+        recv_start = datetime.datetime.now()
+        while len(str_data) < MAXMSG:
 
-        new_data = conn.recv(MAXMSG)
-        received_count = len(new_data)
-        str_data += new_data.decode(encoding=NETENC)
+            new_data = conn.recv(MAXMSG)
+            received_count = len(new_data)
+            str_data += new_data.decode(encoding=NETENC)
 
-        # A newline character signals end of message
-        if MSG_END in str_data:
-            break
+            # A newline character signals end of message
+            if MSG_END in str_data:
+                break
 
-        now = datetime.datetime.now()
-        if now - recv_start > datetime.timedelta(seconds=SRV_TIMEOUT):
-            raise TimeoutError("Client took too long to respond")
+            now = datetime.datetime.now()
+            if now - recv_start > datetime.timedelta(seconds=SRV_TIMEOUT):
+                raise TimeoutError("Client took too long to respond")
 
-    # The space is intentional; there should be a space between
-    # the REQUEST command and the username
-    if str_data.startswith(REQUEST_COMMAND + " "):
-        sys_username = str_data[len(REQUEST_COMMAND) + 1:]
-        # Check the username exists, something like
-        # is_real_system_username(username)
-        
-        allocate_account(cfg, conn, addr, sys_username)
+        # The space is intentional; there should be a space between
+        # the REQUEST command and the username
+        if str_data.startswith(REQUEST_COMMAND + " "):
+            sys_username = str_data[len(REQUEST_COMMAND) + 1:]
 
-    elif str_data.startswith(RELEASE_COMMAND):
-        
-        release_account(cfg, conn, addr)
+            # Check the username exists and is real;
+            # check again with whitespace removed if necessary
+            # If we can't confirm username is real, terminate connection.
 
-    else:
-        print("Invalid connection from host {}".format(addr))
+            if validity.is_valid_system_username(sys_username):
+                allocate_account(cfg, conn, addr, sys_username)
+            elif validity.is_valid_system_username(sys_username.strip()):
+                allocate_account(cfg, conn, addr, sys_username.strip())
+
+        elif str_data.startswith(RELEASE_COMMAND):
+            
+            release_account(cfg, conn, addr)
+
+        else:
+            print("Invalid connection from host {}".format(addr))
+    except Exception:
+        error_msg = traceback.format_exc()
+        print(error_msg, end="")
 
     conn.close()
 
