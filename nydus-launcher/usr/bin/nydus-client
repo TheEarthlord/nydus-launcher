@@ -187,6 +187,7 @@ def request(ssock):
             "Alloc message had incorrect number of delimiters; should have had {} but had {}"\
             .format(ALLOC_DELIMS, num_delims)
 
+    str_data = str_data.rstrip(MSG_END)
     parts = str_data.split(ALLOC_DCHAR)
 
     ssock.close()
@@ -203,7 +204,7 @@ def request(ssock):
     assert validity.is_valid_minecraft_uuid(mc_uuid),\
             "Received invalid Minecraft uuid {}".format(mc_uuid)
     assert validity.is_valid_minecraft_token(mc_token),\
-            "Received invalid Minecraft token {}"
+            "Received invalid Minecraft token {}".format(mc_token)
 
     next_status_window()
 

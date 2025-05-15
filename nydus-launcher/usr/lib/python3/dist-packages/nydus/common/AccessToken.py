@@ -47,10 +47,10 @@ class AccessToken:
     if the server happens to be down during the final check interval.
     """
     def needs_renewal(self, check_interval, num_intervals=2):
-        if not isintance(check_interval, datetime.timedelta):
+        if not isinstance(check_interval, datetime.timedelta):
             raise TypeError("check_interval for AccessToken.needs_renewal must be a datetime.timedelta. Was given a {}".format(type(check_interval)))
 
-        if not validity.is_positive_integer(num_intervals):
+        if not isinstance(num_intervals, int) and num_intervals > 0:
             raise ValueError("num_intervals for AccessToken.needs_renewal must be a positive integer. Was {}".format(num_intervals))
 
         if self.is_expired():

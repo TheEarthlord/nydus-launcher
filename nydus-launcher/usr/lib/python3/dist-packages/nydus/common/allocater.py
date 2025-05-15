@@ -115,9 +115,24 @@ class AllocAccount:
         self.set_client_username(client_username)
         self.set_alloc_time(alloc_time)
 
+        # AccessTokens need to be given a datetime as their
+        # second arg, so we convert them here.
+
+        if not isinstance(msal_expiry, datetime.datetime):
+            msal_expiry = datetime.datetime.strptime(msal_expiry, TIME_FORMAT)
+
+        if not isinstance(xboxlive_expiry, datetime.datetime):
+            xboxlive_expiry = datetime.datetime.strptime(xboxlive_expiry, TIME_FORMAT)
+
+        if not isinstance(xsts_expiry, datetime.datetime):
+            xsts_expiry = datetime.datetime.strptime(xsts_expiry, TIME_FORMAT)
+
+        if not isinstance(mc_expiry, datetime.datetime):
+            mc_expiry = datetime.datetime.strptime(mc_expiry, TIME_FORMAT)
+
         msal_at = AccessToken(msal_token, msal_expiry)
         xbl_at = AccessToken(xboxlive_token, xboxlive_expiry)
-        xsts_at = AccessToken(xsts_token, xsts_expiry, xsts_hash)
+        xsts_at = AccessToken(xsts_token, xsts_expiry, tokhash=xsts_hash)
         mc_at = AccessToken(mc_token, mc_expiry)
         mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
         aat = AccountAuthTokens(ms_username, msal_at, xbl_at, xsts_at, mc_at, mc_acc)
@@ -252,24 +267,24 @@ class AllocAccount:
         return self.aat.get_msal_token().needs_renewal(check_interval, num_intervals)
 
     def xboxlive_needs_renewal(self, check_interval, num_intervals=2):
-        return self.aat.get_msal_token().needs_renewal(check_interval, num_intervals)
+        return self.aat.get_xboxlive_token().needs_renewal(check_interval, num_intervals)
 
     def xsts_needs_renewal(self, check_interval, num_intervals=2):
-        return self.aat.get_msal_token().needs_renewal(check_interval, num_intervals)
+        return self.aat.get_xsts_token().needs_renewal(check_interval, num_intervals)
 
     def minecraft_needs_renewal(self, check_interval, num_intervals=2):
-        return self.aat.get_msal_token().needs_renewal(check_interval, num_intervals)
+        return self.aat.get_minecraft_token().needs_renewal(check_interval, num_intervals)
 
     # We must allow empty string for client_ip, client_username, and
     # alloc time as empty strings for them indicate an unallocated account
     def set_client_ip(self, client_ip):
-        if client_ip == "" or validator.is_valid_ipaddr(client_ip):
+        if client_ip == "" or validity.is_valid_ipaddr(client_ip):
             self.client_ip = client_ip
         else:
             raise ValueError("Client IP value is not a valid IP address: {}".format(client_ip))
 
     def set_client_username(self, client_username):
-        if client_username == "" or validator.is_valid_system_username(client_username):
+        if client_username == "" or validity.is_valid_system_username(client_username):
             self.client_username = client_username
         else:
             raise ValueError("Client username value is not a valid system username: {}".format(client_username))
@@ -277,7 +292,7 @@ class AllocAccount:
     def set_alloc_time(self, alloc_time):
         if alloc_time == "":
             self.alloc_time = alloc_time
-        elif validator.is_valid_str_timestamp(alloc_time):
+        elif validity.is_valid_str_timestamp(alloc_time):
             self.alloc_time = datetime.datetime.strptime(alloc_time, TIME_FORMAT)
         else:
             raise ValueError("Alloc time value is not a valid timestamp: {}".format(alloc_time))
@@ -388,7 +403,13 @@ class AllocAccount:
         ]
 
         for i in range(len(fields)):
-            fields[i] = str(fields[i])
+            obj = fields[i]
+
+            # Make sure datetimes are written out in the right format
+            if isinstance(obj, datetime.datetime):
+                fields[i] = obj.strftime(TIME_FORMAT)
+            else:
+                fields[i] = str(obj)
 
         assert len(fields) == AllocAccount.num_fields()
         return ALLOC_DELIM.join(fields)
@@ -488,6 +509,7 @@ class AllocEngine:
 
                 # Skip first line, since it contains the header for each column
                 if first_line:
+                    first_line = False
                     continue
 
                 line = line.strip()
