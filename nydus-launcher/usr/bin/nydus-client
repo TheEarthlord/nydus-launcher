@@ -116,6 +116,12 @@ window which tells us about it.
 """
 def error_window(error_msg):
     assert validity.is_nonempty_str(error_msg)
+
+    # If we've hit an error, we're no longer in the normal
+    # procession of status messages and should end them.
+    with STATUS_LOCK:
+        STATUS = len(STATUS_MESSAGES)
+
     root = tk.Tk(className=WINDOW_TITLE)
     frame = ttk.Frame(root, padding=10)
     frame.grid()
@@ -164,6 +170,12 @@ def request(ssock):
     received_count = -1
     while len(str_data) < MAXMSG:
         data = ssock.recv(MAXMSG)
+        if len(data) == 0:
+            # connection closed
+
+            error_window("Server closed connection; failed to get Minecraft account.")
+            return
+
         received_count = len(data)
         str_data += data.decode(encoding=NETENC)
 
