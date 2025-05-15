@@ -46,6 +46,24 @@ class TestXboxTimestamp(unittest.TestCase):
         self.assertTrue(isinstance(dt, datetime.datetime))
         self.assertEqual(out_ts, dt.strftime(TS_FORMAT))
 
+    def test_simple5(self):
+        in_ts = "2025-05-13T18:13:40.58223Z"
+        out_ts = "2025-05-13T18:13:40.582230Z"
+
+        dt = parse_xbox_timestamp(in_ts)
+
+        self.assertTrue(isinstance(dt, datetime.datetime))
+        self.assertEqual(out_ts, dt.strftime(TS_FORMAT))
+
+    def test_simple6(self):
+        in_ts = "2025-05-13T18:13:40.00223Z"
+        out_ts = "2025-05-13T18:13:40.002230Z"
+
+        dt = parse_xbox_timestamp(in_ts)
+
+        self.assertTrue(isinstance(dt, datetime.datetime))
+        self.assertEqual(out_ts, dt.strftime(TS_FORMAT))
+
 
 if __name__ == "__main__":
     unittest.main()

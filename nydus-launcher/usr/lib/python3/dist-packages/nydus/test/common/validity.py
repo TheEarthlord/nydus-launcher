@@ -557,8 +557,11 @@ class TestXboxTimestamp(unittest.TestCase):
     def test_simple1(self):
         self.assertTrue(is_valid_xbox_timestamp("2025-05-02T06:18:21.6780236Z"))
 
-    def test_simple1(self):
+    def test_simple2(self):
         self.assertTrue(is_valid_xbox_timestamp("2025-05-02T22:18:22.5488737Z"))
+
+    def test_simple3(self):
+        self.assertTrue(is_valid_xbox_timestamp("2025-05-02T22:18:22.54887Z"))
 
     def test_fail1(self):
         self.assertFalse(is_valid_xbox_timestamp("025-05-02T06:18:21.6780236Z"))

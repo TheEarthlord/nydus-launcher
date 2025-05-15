@@ -98,11 +98,16 @@ def parse_xbox_timestamp(ts):
     seconds_part = parts[0]
     fractional_part = parts[1]
     
-    # Only keep 6 digits of the fractional part
+    # Only keep the digits of the fractional part
     fractional_part = fractional_part.rstrip(validity.XB_EXPIRY_SUFFIX)
-    # We have to slice out the first 6 digits because
-    # formatting doesn't restrict the number of digits to 6
-    fractional_part = "{:06}".format(fractional_part)[:6]
+
+    # There might be more than 6 digits or fewer than 6 digits, but we want
+    # exactly 6 for datetime to parse it.
+    if len(fractional_part) > 6:
+        fractional_part = fractional_part[:6]
+    elif len(fractional_part) < 6:
+        fractional_part = "{:<06}".format(fractional_part)
+    # else it's exactly 6 and no change is needed.
 
     fixed_ts = "{}{}{}{}".format(seconds_part, validity.XB_EXPIRY_SEPARATER, fractional_part, validity.XB_EXPIRY_SUFFIX)
     xbox_datetime = datetime.datetime.strptime(fixed_ts, validity.XB_EXPIRY_FORMAT)
