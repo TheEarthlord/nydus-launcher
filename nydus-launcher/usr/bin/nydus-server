@@ -105,6 +105,12 @@ def client_exchange(cfg, conn, addr):
         while len(str_data) < MAXMSG:
 
             new_data = conn.recv(MAXMSG)
+
+            # Empty data means the other end of the connection is closed
+            # We can discard this exchange.
+            if len(new_data) == 0:
+                return
+
             received_count = len(new_data)
             str_data += new_data.decode(encoding=NETENC)
 
