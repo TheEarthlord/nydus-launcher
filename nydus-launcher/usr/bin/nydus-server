@@ -79,7 +79,7 @@ def release_account(cfg, conn, addr):
     client_ip = addr[0]
 
     with ALLOCDB_LOCK:
-        alloc_engine = AllocEnginge(cfg.get_alloc_file())
+        alloc_engine = AllocEngine(cfg.get_alloc_file())
         alloc_engine.release_account_ip(client_ip)
 
 def handle_connection(cfg, conn, addr):
