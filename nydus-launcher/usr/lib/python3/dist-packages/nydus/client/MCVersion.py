@@ -155,8 +155,9 @@ class MCVersion:
 
         contents = os.listdir(log_cdir)
         for name in contents:
-            if name.endswith(".xml") and os.path.isfile(name):
-                self.log_config = os.path.join(log_cdir, name)
+            filepath = os.path.join(log_cdir, name)
+            if name.endswith(".xml") and os.path.isfile(filepath):
+                self.log_config = filepath
                 return
 
         raise OSError("No xml file in {} to get Log4J config from.".format(log_cdir))

@@ -111,7 +111,7 @@ class DownloadFile:
 
         mc_path = utils.get_minecraft_path()
 
-        if os.path.isabs() and filepath.startswith(mc_path):
+        if os.path.isabs(mc_path) and filepath.startswith(mc_path):
             return True
         return False
 
