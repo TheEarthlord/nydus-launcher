@@ -1,3 +1,9 @@
+nydus-launcher (1.0.10) jammy; urgency=medium
+
+  * Initial server/client communication completes successfully
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Fri, 16 May 2025 15:34:01 +1000
+
 nydus-launcher (1.0.9) jammy; urgency=medium
 
   * Server reaches listening phase
