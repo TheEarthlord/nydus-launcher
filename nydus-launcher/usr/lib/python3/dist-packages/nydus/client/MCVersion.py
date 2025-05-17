@@ -323,7 +323,7 @@ class MCVersion:
             if not isinstance(jar, dict):
                 raise TypeError("Object inside the jar files list in JSON file {} for version {} is not a dictionary. Instead it's {}.".format(self.get_json_file(), self.version, jar))
             
-            this_jar = self.read_one_jar()
+            this_jar = self.read_one_jar(jar)
             if this_jar:
                 self.jars.append(this_jar)
 
@@ -355,7 +355,7 @@ class MCVersion:
                 if isinstance(rule_dict, dict):
                     action = rule_dict.get(ACTION_KEY)
                     if isinstance(action, str) and action == DESIRED_ACTION:
-                        os_dict = rule_dict(OS_KEY)
+                        os_dict = rule_dict.get(OS_KEY)
                         if isinstance(os_dict, dict):
                             os_name = os_dict.get(NAME_KEY)
                             if os_name != DESIRED_OS:
@@ -371,7 +371,7 @@ class MCVersion:
                 sha1 = artifact_dict.get(SHA1_KEY)
 
                 if download_path and url and sha1:
-                    download_fname = so.path.basename(download_path)
+                    download_fname = os.path.basename(download_path)
                     df = DownloadFile(url, sha1, name=download_fname)
                     return df
 

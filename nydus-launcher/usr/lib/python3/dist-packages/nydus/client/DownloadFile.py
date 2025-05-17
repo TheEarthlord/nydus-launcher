@@ -162,10 +162,11 @@ class DownloadFile:
     Returns True if so, False if not
     """
     def verify_file_hash(self):
-        with open(self.get_fullpath(), "rb") as f:
-            digest = hashlib.file_digest(f, "sha1")
 
-        hexhash = digest.hexdigest()
+        hashclass = hashlib.sha1()
+        with open(self.get_fullpath(), "rb") as f:
+            hashclass.update(f.read())
+        hexhash = hashclass.hexdigest()
 
         # compare_digest requires the same type from both objects, but
         # .hexdigest() returns a string, so we have that
