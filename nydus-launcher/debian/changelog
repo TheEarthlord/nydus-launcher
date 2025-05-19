@@ -1,3 +1,9 @@
+nydus-launcher (1.1.1) jammy; urgency=medium
+
+  * New commands for Nydus-Cli giving summaries
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Mon, 19 May 2025 19:13:34 +1000
+
 nydus-launcher (1.1.0) jammy; urgency=medium
 
   * First successful launch of Minecraft using Nydus Launcher
