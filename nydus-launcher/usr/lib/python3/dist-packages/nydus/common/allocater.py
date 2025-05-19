@@ -88,6 +88,28 @@ FIELDS = [
     "mc_uuid",
 ]
 
+SUMMARY_FIELDS = [
+    "client_ip",
+    "client_username",
+    "alloc_time",
+    "ms_username",
+    "mc_username",
+]
+
+SUMMARY_DELIM = "|"
+
+SUMMARY_PADDINGS = [
+    15,
+    20,
+    19,
+    33,
+    33,
+]
+
+assert len(SUMMARY_FIELDS) == len(SUMMARY_PADDINGS),\
+    "Must have exactly one padding size for each summary field. Had {} paddings and {} fields".format(
+        len(SUMMARY_PADDINGS), len(SUMMARY_FIELDS))
+
 """
 Represents one line of the account allocation
 database file.
@@ -187,6 +209,52 @@ class AllocAccount:
     """
     def make_header():
         return ALLOC_DELIM.join(FIELDS)
+
+    """
+    Creates the header line to go in the top of the summary view.
+    Does not include a newline on the end
+    """
+    def make_summary_header():
+        header_blocks = []
+        for i in range(len(SUMMARY_FIELDS)):
+            field = SUMMARY_FIELDS[i]
+            padding = SUMMARY_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(field)
+            header_blocks.append(block)
+
+        outstr = SUMMARY_DELIM.join(header_blocks)
+        return outstr
+
+    """
+    Creates a line of summary data, for easy viewing.
+    Includes on allocation client IP, allocation client username, allocation time,
+    minecraft username, and microsoft username.
+    It's spaced for easy reading.
+    Does NOT include a newline on the end.
+    """
+    def summary(self):
+        summary_blocks = []
+        fields = [
+            self.get_client_ip(),
+            self.get_client_username(),
+            self.get_alloc_time(),
+            self.get_ms_username(),
+            self.get_mc_username(),
+        ]
+
+        for i in range(len(fields)):
+            value = fields[i]
+            if isinstance(value, datetime.datetime):
+                value = value.strftime(TIME_FORMAT)
+            padding = SUMMARY_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(value)
+            summary_blocks.append(block)
+
+        outstr = SUMMARY_DELIM.join(summary_blocks)
+        return outstr
+
 
     def copy(self):
         return AllocAccount(
@@ -492,6 +560,44 @@ class AllocEngine:
 
         to_view = [acc for acc in self.accounts if acc.get_client_ip() == client_ip]
         return AllocEngine.list_to_string(to_view)
+    
+    """
+    Returns a summary string (like that given by list_to_summary)
+    but specifically for all the accounts in the attached AllocEngine
+    """
+    def summary(self):
+        return AllocEngine.list_to_summary(self.accounts)
+
+    """
+    Returns a string, containing a summary form of the allocation database.
+    The summary form shows only allocation client IP, allocation username, allocation time,
+    minecraft username, and microsoft username, and is spaced for easy viewing.
+    Must be given a list of AllocAccounts.
+    """
+    def list_to_summary(acclist):
+        assert isinstance(acclist, list), "Provided object must be a list of AllocAccounts. Was {}".format(acclist)
+        for elem in acclist:
+            assert isinstance(elem, AllocAccount), "Provided object must be a list of AllocAccounts. Contained an element '{}'".format(elem)
+
+        outstr = ""
+        outstr += "{}\n".format(AllocAccount.make_summary_header())
+        for acc in acclist:
+            outstr += "{}\n".format(acc.summary())
+        return outstr
+    
+    def summary_ip(self, client_ip):
+        if not validity.is_valid_ipaddr(client_ip):
+            raise ValueError("Not a valid IP address: {}".format(client_ip))
+
+        to_view = [acc for acc in self.accounts if acc.get_client_ip() == client_ip]
+        return AllocEngine.list_to_summary(to_view)
+
+    def summary_uuid(self, uuid):
+        if not validity.is_valid_minecraft_uuid(uuid):
+            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
+
+        to_view = [acc for acc in self.accounts if acc.get_mc_uuid() == uuid]
+        return AllocEngine.list_to_summary(to_view)
 
     def write_changes(self):
         try:

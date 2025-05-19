@@ -9,6 +9,9 @@ from nydus.common import alloc_utils
 
 PROGNAME = "nydus-cli"
 
+SUMMARY = "summary"
+SUMMARY_UUID = "summary-uuid"
+SUMMARY_IP = "summary-ip"
 VIEW = "view"
 VIEW_UUID = "view-uuid"
 VIEW_IP = "view-ip"
@@ -20,6 +23,9 @@ HELP = "help"
 CREATE = "create"
 
 COMMANDS = [
+    SUMMARY,
+    SUMMARY_UUID,
+    SUMMARY_IP,
     VIEW,
     VIEW_UUID,
     VIEW_IP,
@@ -32,6 +38,7 @@ COMMANDS = [
 ]
 
 SIMPLE_COMMANDS = [
+    SUMMARY,
     VIEW,
     CREATE,
     CLEANUP,
@@ -39,11 +46,13 @@ SIMPLE_COMMANDS = [
 ]
 
 UUID_COMMANDS = [
+    SUMMARY_UUID,
     VIEW_UUID,
     RELEASE_UUID,
 ]
 
 IP_COMMANDS = [
+    SUMMARY_IP,
     VIEW_IP,
     RELEASE_IP,
 ]
@@ -166,7 +175,13 @@ def cli_main(cfg):
 
     allocengine = AllocEngine(cfg.get_alloc_file())
 
-    if command == VIEW:
+    if command == SUMMARY:
+        print(allocengine.summary())
+    elif command == SUMMARY_UUID:
+        print(allocengine.summary_uuid(data))
+    elif command == SUMMARY_IP:
+        print(allocengine.summary_ip(data))
+    elif command == VIEW:
         print(allocengine)
     elif command == VIEW_UUID:
         print(allocengine.view_uuid(data))

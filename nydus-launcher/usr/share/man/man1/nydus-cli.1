@@ -46,6 +46,28 @@ are not present in the configuration file.
 
 .SH "COMMANDS"
 
+.SS summary
+.RS 2
+View a summary of the allocation database. The summary is designed
+for easy human viewing, with spacing between entries, and only
+showing the allocated client IP, allocated username, allocation time,
+and Microsoft and Minecraft usernames associated with each account.
+Tokens and token-related timestamps are ommitted for readability.
+.RE
+
+.SS summary-uuid <uuid>
+.RS 2
+View a summary of the allocation database, showing only the
+Minecraft account with specified uuid. (Remember the uuid itself
+will not appear in the summary output).
+.RE
+
+.SS summary-ip <client-ip>
+.RS 2
+View a summary of the allocation database, showing only accounts
+allocated to the specified client IP address.
+.RE
+
 .SS view
 .RS 2
 View the current contents of the entire allocation database.
