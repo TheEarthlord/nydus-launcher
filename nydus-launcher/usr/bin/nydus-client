@@ -129,6 +129,13 @@ def error_window(error_msg):
 
     root.mainloop()
 
+"""
+Advance window status number beyond the last message
+so all the windows close.
+"""
+def close_status_window():
+    with STATUS_LOCK:
+        STATUS = len(STATUS_MESSAGES)
 
 """
 After we close Minecraft, we establish another connection to
@@ -222,6 +229,7 @@ def request(ssock):
 
     mc_instance.launch()
 
+    close_status_window()
 
 def client_main(cfg):
 

@@ -1,4 +1,3 @@
-
 import subprocess
 import os
 import json
@@ -591,7 +590,10 @@ class MCVersion:
         )
 
         launch_list = launch_command.split()
-        subprocess.run(launch_list)
+
+        # We want to run from inside the minecraft dir, which is self.game_dir
+        # so that logs end up in there, not dumped in random spots on the filesystem
+        subprocess.run(launch_list, cwd=self.game_dir)
 
         # subprocess.run should block until the process finishes. So we'll return when
         # Minecraft is closed and we're ready to release the account.
