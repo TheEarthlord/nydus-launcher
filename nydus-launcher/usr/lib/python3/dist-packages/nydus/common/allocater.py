@@ -538,6 +538,9 @@ class AllocEngine:
         if not validity.is_valid_system_username(client_username):
             raise ValueError("Client username was not a valid system username: {}".format(client_username))
 
+        if client_username == "root":
+            raise ValueError("Will not allocate Minecraft accounts to root.")
+
         # Release everything currently allocated to this client
         for acc in self.accounts:
             if acc.is_allocated() and acc.get_client_ip() == client_ip:
