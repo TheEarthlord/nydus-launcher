@@ -128,6 +128,7 @@ class MCVersion:
         self.user_type = "msa"
         self.version_type = "release"
 
+        self.include_main_jar_file()
         self.find_log_config()
         self.read_json_file()
 
@@ -476,6 +477,28 @@ class MCVersion:
         # because it only includes the download link, not
         # the path for local storage.
         return os.path.join(self.game_dir, "versions", self.version, "{}.json".format(self.version))
+
+    """
+    There is usually a jar file in the same place as the json file
+    which tells us everything about the current version.
+    If so, we probably need to include it in our set of jars.
+    This function returns a string, the path to that primary
+    jar file.
+    Usually of the form
+    /home/<username>/.minecraft/versions/<version>/<version>.jar
+    """
+    def get_main_jar_file(self):
+        return os.path.join(self.game_dir, "versions", self.version, "{}.jar".format(self.version))
+    
+    """
+    If the main jar file (the one named <version>.jar present
+    in the same directory as <version>.json) exists, add it to
+    the jar list.
+    """
+    def include_main_jar_file(self):
+        main_jar_path = self.get_main_jar_file()
+        if os.path.isfile(main_jar_path):
+            self.jars.append(main_jar_path)
     
     def get_version(self):
         return self.version
