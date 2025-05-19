@@ -1,6 +1,7 @@
 import subprocess
 import os
 import json
+import re
 from json.decoder import JSONDecodeError
 from nydus.common import validity
 from nydus.client import utils
@@ -382,7 +383,7 @@ class MCVersion:
         # and doesn't give us the actual filename.
         # So we're going to just follow the path and add every .jar under it.
 
-        name_parts = re.split(":|\.", name)
+        name_parts = re.split(":|\.", jarname)
 
         dirpath = os.path.join(utils.get_minecraft_path(), MC_DOWNLOAD_DIR, name_parts)
 
