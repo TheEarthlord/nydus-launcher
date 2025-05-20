@@ -128,7 +128,6 @@ class MCVersion:
         self.user_type = "msa"
         self.version_type = "release"
 
-        self.include_main_jar_file()
         self.find_log_config()
         self.read_json_file()
 
@@ -376,25 +375,33 @@ class MCVersion:
                     df = DownloadFile(url, sha1, name=download_fname)
                     return df
 
-        # Otherwise we have to form a path using 'name'
-        # Name tells us a path, but it starts under ~/.minecraft/<MC_DOWNLOAD_DIR>
+        # Otherwise we have to form a path using the contents of the key 'name'
+        # The form of 'name' is based on the path where the file goes,
+        # but it starts under ~/.minecraft/<MC_DOWNLOAD_DIR>
         # (MC_DOWNLOAD_DIR is usually 'libraries')
         # and uses both colons and full stops to delimit directories instead of slashes
         # and doesn't give us the actual filename.
-        # So we're going to just follow the path and add every .jar under it.
+        # We can't distinguish between full stops as directory separators and full
+        # stops as part of directory names from the 'name' key alone; however
+        # from observation, most of the names which use full stops to separate directories
+        # are files which we can make a DownloadFile for, and those have already
+        # been handled by this point in the function.
+        # So we're going to split the name by colons only to get a directory,
+        # then add the first jar file we find inside it. These directories typically
+        # only have one jar each, so it should work.
 
-        name_parts = re.split(":|\.", jarname)
+        name_parts = re.split(":", jarname)
 
-        dirpath = os.path.join(utils.get_minecraft_path(), MC_DOWNLOAD_DIR, name_parts)
-
+        dirpath = os.path.join(utils.get_minecraft_path(), MC_DOWNLOAD_DIR, *name_parts)
         
         if not os.path.isdir(dirpath):
             raise FileNotFoundError("No directory at {} to get required jar files for version {} as specified in JSON file {}.".format(dirpath, self.version, self.get_json_file()))
 
         contents = os.listdir(dirpath)
         for name in contents:
-            if name.endswith(".jar") and os.path.isfile(name):
-                return os.path.join(dirpath, name)
+            fullpath = os.path.join(dirpath, name)
+            if name.endswith(".jar") and os.path.isfile(fullpath):
+                return fullpath
 
         raise FileNotFoundError("No jar file in directory {} as expected by JSON file {} for version {}.".format(dirpath, self.get_json_file(), self.version))
 
@@ -567,6 +574,10 @@ class MCVersion:
     stored in this class.
     """
     def launch(self):
+
+        # We only include the main jar file when launching
+        # so that we won't get main jar files from ancestor versions
+        self.include_main_jar_file()
         self.download_all()
 
         logc_path = ""
