@@ -30,6 +30,8 @@ NAME_KEY = "name"
 ACTION_KEY = "action"
 OS_KEY = "os"
 PATH_KEY = "path"
+ARGUMENTS_KEY = "arguments"
+GAME_KEY = "game"
 
 DESIRED_ACTION = "allow"
 DESIRED_OS = "linux"
@@ -110,6 +112,14 @@ class MCVersion:
         self.jars = []
         self.main_class = ""
 
+        # Sometimes the version json defines extra arguments to use in launching
+        # Minecraft, mainly in the case of OptiFine.
+        # The normal Minecraft versions mostly use these args to include information
+        # like username, access tokens, etc which Nydus Launcher is hardcoded to provide
+        # anyway, but there are a few args we need to actually read out of the json.
+        # The arg_pairs list stores these strings in order.
+        self.arg_pairs = []
+
         # MCAccount contains username, uuid, access token
         # Data obtained from server.
         self.mc_account = mc_account
@@ -182,6 +192,7 @@ class MCVersion:
         self.read_id(version_json)
         self.read_logging(version_json)
         self.read_class(version_json)
+        self.read_arguments(version_json)
         self.read_jars(version_json)
 
     """
@@ -263,6 +274,71 @@ class MCVersion:
         lconfig_df = DownloadFile(url, sha1, name=fname, path=self.get_log_config_dir())
         lconfig_df.download()
         self.log_config = lconfig_df
+
+    """
+    version_json: a dictionary, the top level of the data structure returned
+        by parsing the JSON out of this Minecraft version's JSON file.
+    This method finds all the arguments which we're supposed to give to
+    Minecraft when launching it. Some arguments have their values filled
+    in by variables which I assume are internal to the Minecraft launcher;
+    we ignore them.
+    Returns nothing. Modifies the arg_pairs attribute if necessary.
+    """
+    def read_arguments(self, version_json):
+        assert isinstance(version_json, dict), "Must pass a dictionary representing JSON to MCVersion.read_arguments. Instead, got {}".format(type(version_json))
+
+        # The key "arguments" should contain a dictionary
+        # which contains the key "game" which contains a list
+        # of strings which are all the arguments. Skip anything
+        # invalid; we can launch without extra arguments
+        # if none are specified.
+        # There are other objects in the game list; mainly
+        # rules dictionaries for args which may or may not be present.
+        # But we're ignoring them for now.
+        # TODO figure out if any of the arguments underneath rules
+        # are worth considering.
+        arg_block = version_json.get(ARGUMENTS_KEY)
+
+        if arg_block and isinstance(arg_block, dict):
+            game_args = arg_block.get(GAME_KEY)
+
+            if game_args and isinstance(game_args, list):
+                
+                argstrings = [s for s in game_args if isinstance(s, str)]
+
+                # Look for pairs of elements; each arg should have a name
+                # starting with -- and a value immediately following.
+                # If a value is wrapped in {}, don't add it or its key
+                # Otherwise add all the keys and values you see.
+                # We iterate backwards since the decision depends on the value,
+                # which comes after the key.
+                
+                while len(argstrings) > 0:
+                    
+                    elem = argstrings.pop(len(argstrings) - 1)
+
+                    if elem.startswith("--"):
+                        # A key without a value, since we would have seen its value first
+
+                        self.arg_pairs.append(elem)
+                    elif not (elem.startswith("{") and elem.endswith("}")):
+
+                        # A value without the brackets, we want to include it.
+                        # But figure out if it has a corresponding key
+                        # and include that too if relevant
+                        
+                        key = None
+                        if len(argstrings) > 0:
+                            next_elem = argstrings[len(argstrings) - 1]
+                            if next_elem.startswith("--"):
+                                key = next_elem
+                                argstrings.pop(len(argstrings) - 1)
+
+                        if key:
+                            self.arg_pairs.extend([key, elem])
+                        else:
+                            self.arg_pairs.append(elem)
+
 
     """
     version_json: a dictionary, the top level of the data structure returned
@@ -602,6 +678,11 @@ class MCVersion:
         )
 
         launch_list = launch_command.split()
+
+        # Add in any custom arguments from the JSON
+        # Arg values of "" mean the key doesn't need a value assigned to it.
+        for arg in self.arg_pairs:
+            launch_list.append(arg)
 
         # We want to run from inside the minecraft dir, which is self.game_dir
         # so that logs end up in there, not dumped in random spots on the filesystem
