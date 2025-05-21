@@ -308,7 +308,7 @@ class MCVersion:
 
                 # Look for pairs of elements; each arg should have a name
                 # starting with -- and a value immediately following.
-                # If a value is wrapped in {}, don't add it or its key
+                # If a value is wrapped in ${}, don't add it or its key
                 # Otherwise add all the keys and values you see.
                 # We iterate backwards since the decision depends on the value,
                 # which comes after the key.
@@ -321,11 +321,22 @@ class MCVersion:
                         # A key without a value, since we would have seen its value first
 
                         self.arg_pairs.append(elem)
-                    elif not (elem.startswith("{") and elem.endswith("}")):
+                    elif elem.startswith("${") and elem.endswith("}"):
+                        # A value to be filled with a variable.
+                        # We don't have a good general solution for these,
+                        # so we ignore them.
+                        # If there's a corresponding key, delete that
+                        # from the list too.
 
-                        # A value without the brackets, we want to include it.
-                        # But figure out if it has a corresponding key
-                        # and include that too if relevant
+                        if len(argstrings) > 0:
+                            next_elem = argstrings[len(argstrings) - 1]
+                            if next_elem.startswith("--"):
+                                argstrings.pop(len(argstrings) - 1)
+
+                    else:
+                        # Not a key and not variable value, so a fixed
+                        # value. Include this in the saved args, and
+                        # include its key if one is present.
                         
                         key = None
                         if len(argstrings) > 0:

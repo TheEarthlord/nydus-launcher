@@ -1,3 +1,10 @@
+nydus-launcher (1.2.0) jammy; urgency=medium
+
+  * Nydus Launcher can launch both mainline versions and OptiFine versions
+    successfully.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 21 May 2025 14:02:19 +1000
+
 nydus-launcher (1.1.1) jammy; urgency=medium
 
   * New commands for Nydus-Cli giving summaries
