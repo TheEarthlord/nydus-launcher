@@ -2,3 +2,6 @@
 
 # For nydus-server
 msal
+
+# For nydus-client
+requests
