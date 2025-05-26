@@ -1,7 +1,8 @@
 # Building the Nydus Launcher
 
 ### TODO get list of needed packages.
-Certainly you need ```devscripts``` for debuild.
+To build Nydus Launcher, you need the
+apt packages ```devscripts``` and ```debhelper```.
 
 The makefile in the root of the project should be
 adequate. You just need to run ```make```.
