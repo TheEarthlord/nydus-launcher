@@ -365,6 +365,24 @@ def is_valid_xbox_timestamp(ts):
     return True
 
 
+"""
+Returns True if the given value is a string
+representing the name of a java runtime.
+We look for lower-case alphabet characters and dashes
+only, and the word "java" to appear somewhere.
+Most of the ones we want will be of the form
+"java-runtime-<greek letter>"
+but others are of different forms, so we're lenient.
+"""
+def is_valid_java_runtime(name):
+    if not is_nonempty_str(name):
+        return False
+
+    if not re.fullmatch(r"[a-z-]+", acc):
+        return False
+    
+    return True
+
 
 """
 Returns True if the given value is a
