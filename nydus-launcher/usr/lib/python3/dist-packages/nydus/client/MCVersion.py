@@ -8,6 +8,7 @@ from nydus.client import utils
 from nydus.common.MCAccount import MCAccount
 from nydus.client.DownloadFile import DownloadFile
 from nydus.client.DownloadFile import MC_DOWNLOAD_DIR
+from nydus.client.JavaRuntime import JavaRuntime
 
 # Class for storing everything we need to launch
 # a specific version of Minecraft
@@ -32,6 +33,8 @@ OS_KEY = "os"
 PATH_KEY = "path"
 ARGUMENTS_KEY = "arguments"
 GAME_KEY = "game"
+JAVA_KEY = "javaVersion"
+COMPONENT_KEY = "component"
 
 DESIRED_ACTION = "allow"
 DESIRED_OS = "linux"
@@ -124,6 +127,9 @@ class MCVersion:
         # Data obtained from server.
         self.mc_account = mc_account
 
+        # String, absolute path to the java executable used to launch Minecraft
+        self.java_bin = ""
+
         # Standard patterns based on who is logged in
         self.game_dir = utils.get_minecraft_path()
         self.assets_dir = utils.get_minecraft_assets_path()
@@ -193,6 +199,7 @@ class MCVersion:
         self.read_logging(version_json)
         self.read_class(version_json)
         self.read_arguments(version_json)
+        self.read_runtime(version_json)
         self.read_jars(version_json)
 
     """
@@ -222,6 +229,7 @@ class MCVersion:
         self.main_class = ancestor.get_main_class()
         self.jars.extend(ancestor.get_jar_paths())
         self.log_config = ancestor.get_log_config_path()
+        self.java_bin = ancestor.get_java_bin()
 
     """
     version_json: a dictionary, the top level of the data structure returned
@@ -350,6 +358,42 @@ class MCVersion:
                         else:
                             self.arg_pairs.append(elem)
 
+    """
+    version_json: a dictionary, the top level of the data structure returned
+        by parsing the JSON out of this Minecraft version's JSON file.
+    Finds the name of the java runtime to use for this Minecraft launch.
+    Downloads that runtime if necessary, finds the java executable within,
+    and saves it in the java_bin attribute.
+    Returns nothing. Modifies the java_bin attribute if necessary.
+    """
+    def read_runtime(self, version_json):
+        assert isinstance(version_json, dict), "Must pass a dictionary represeting JSON to MCVersion.read_runtime. Instead, got {}".format(type(version_json))
+
+        # Either
+        # a) we do not already have a java runtime from an ancestor
+        #  then failure to get a java runtime from out own JSON is fatal
+        # b) we do have a runtime from an ancestor
+        #  then we want to use our own runtime if one exists,
+        #  but if we don't have our own, using the ancestor's is fine.
+
+        our_runtime = None
+        our_java_bin = None
+        java_dict = version_json.get(JAVA_KEY)
+        if isinstance(java_dict, dict):
+            prospective_runtime = java_dict.get(COMPONENT_KEY)
+            if validity.is_valid_java_runtime(prospective_runtime):
+                our_runtime = prospective_runtime
+
+        if our_runtime:
+            jr = JavaRuntime(our_runtime)
+            jr.setup_runtime()
+            our_java_bin = jr.get_java()
+
+        if our_java_bin:
+            self.java_bin = our_java_bin
+        elif not self.java_bin:
+            raise KeyError("Could not get a valid java runtime from file {} for version {} to launch Minecraft. Runtime name must be under the key {} in the dictionary under the key {}.".format(self.get_json_file(), self.version, COMPONENT_KEY, JAVA_KEY))
+        
 
     """
     version_json: a dictionary, the top level of the data structure returned
@@ -599,6 +643,9 @@ class MCVersion:
 
     def get_main_class(self):
         return self.main_class
+
+    def get_java_bin(self):
+        return self.java_bin
     
     def get_jar_paths(self):
         jar_paths = []
@@ -675,7 +722,8 @@ class MCVersion:
         else:
             raise TypeError("In version {} found log config of unexpected type: {}".format(self.version, type(self.log_config)))
 
-        launch_command = "java -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex 16 --uuid {} --accessToken {} --userType msa --versionType {}".format(
+        launch_command = "{} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex 16 --uuid {} --accessToken {} --userType msa --versionType {}".format(
+            self.java_bin,
             self.get_cpjars(),
             logc_path,
             self.main_class,

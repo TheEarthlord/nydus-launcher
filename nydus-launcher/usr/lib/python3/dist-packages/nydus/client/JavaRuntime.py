@@ -188,6 +188,14 @@ class JavaRuntime:
 
     """
     Accepts a Java runtime name.
+    Downloads and reads the manifest for this runtime.
+    Call setup_runtime to actually create all the files, directories,
+    and so forth in their correct places for this runtime to be used.
+
+    So usual use of this class will look like
+    jr = JavaRuntime("java-runtime-alpha")
+    jr.setup_runtime()
+    bin_path = jr.get_java()
     """
     def __init__(self, runtime):
 
@@ -371,4 +379,19 @@ class JavaRuntime:
     def setup_runtime(self):
         for jrf in self.runtime_files:
             jrf.install()
+
+    """
+    Returns the path to the java executable for this runtime, if it exists.
+    This is usually of the form
+    /home/<username>/.minecraft/runtime/<runtime-name>/<os-name>/<runtime-name>/bin/java
+    Raises FileNotFoundError if it doesn't exist.
+    """
+    def get_java(self):
+
+        path = os.path.join(self.runtime_dir, "bin", "java")
+
+        if os.path.isfile(path):
+            return path
+
+        raise FileNotFoundError("Path to java executable, {}, for runtime {}, does not exist".format(path, self.name))
 
