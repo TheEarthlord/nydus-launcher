@@ -186,7 +186,7 @@ class MCVersion:
                 version_json = json.load(f)
             except JSONDecodeError as e:
                 raise ValueError("Failed to parse json in {} at line {} col {} char {}"\
-                        .format(filepath, e.lineno, e.colno, e.pos))
+                        .format(json_fname, e.lineno, e.colno, e.pos))
 
         self.process_ancestors(version_json)
         self.read_id(version_json)
@@ -236,10 +236,10 @@ class MCVersion:
 
         file_id = version_json.get(ID_KEY)
         if file_id == None:
-            raise KeyError("Version JSON file {} contained no key {}; could not confirm version id.".format(json_fname, ID_KEY))
+            raise KeyError("Version JSON file {} contained no key {}; could not confirm version id.".format(self.get_json_file(), ID_KEY))
         
         if file_id != self.version:
-            raise ValueError("Version JSON file {} listed version id {} which does not match expected version {}".format(json_fname, file_id, self.version))
+            raise ValueError("Version JSON file {} listed version id {} which does not match expected version {}".format(self.get_json_file(), file_id, self.version))
 
     """
     version_json: a dictionary, the top level of the data structure returned
@@ -507,7 +507,7 @@ class MCVersion:
                 manifest_json = json.load(f)
             except JSONDecodeError as e:
                 raise ValueError("Failed to parse json in {} at line {} col {} char {}"\
-                        .format(filepath, e.lineno, e.colno, e.pos))
+                        .format(manifest, e.lineno, e.colno, e.pos))
         
         versions_list = manifest_json.get(VERSIONS_KEY)
         if versions_list == None:
@@ -634,7 +634,7 @@ class MCVersion:
 
         if isinstance(self.log_config, str):
             if not os.path.isfile(self.log_config):
-                raise FileNotFoundError("Needed file {} for version {} does not exist and is not downloadable.".format(jar, self.version))
+                raise FileNotFoundError("Needed file {} for version {} does not exist and is not downloadable.".format(self.log_config, self.version))
         elif isinstance(self.log_config, DownloadFile):
             self.log_config.download()
         else:
