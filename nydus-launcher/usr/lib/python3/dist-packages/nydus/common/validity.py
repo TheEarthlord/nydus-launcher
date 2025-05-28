@@ -378,7 +378,7 @@ def is_valid_java_runtime(name):
     if not is_nonempty_str(name):
         return False
 
-    if not re.fullmatch(r"[a-z-]+", acc):
+    if not re.fullmatch(r"[a-z-]+", name):
         return False
     
     return True

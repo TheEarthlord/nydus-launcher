@@ -2,6 +2,7 @@ import os
 import json
 from json.decoder import JSONDecodeError
 from nydus.common import validity
+from nydus.client import utils
 from nydus.client.DownloadFile import DownloadFile
 
 MANIFEST_KEY = "manifest"
@@ -176,7 +177,8 @@ class JavaRuntimeFile:
         elif self.type == self.TYPE_DIRECTORY:
             pass
         elif self.type == self.TYPE_LINK:
-            os.symlink(self.target, self.path)
+            if not os.path.islink(self.path):
+                os.symlink(self.target, self.path)
         else:
             raise ValueError("JavaRuntimeFile with path {} had unrecognised type '{}'. Recognised types are {}".format(self.path, self.type, self.FILETYPES))
 
@@ -294,32 +296,40 @@ class JavaRuntime:
 
         jre_content = jre_json.get(MANIFEST_KEY)
         if jre_content == None:
-            raise KeyError("Jre manifest file {} contained no key {}; could not get manifest for runtime {}".format(jre_fname, MANIFEST_KEY, self.name))
+            raise KeyError("Jre manifest file {} contained no key {}; could not get manifest for runtime {}".format(self.get_jre_manifest(), MANIFEST_KEY, self.name))
         if not isinstance(jre_content, dict):
-            raise TypeError("Contents of key {} in file {} was not a dict; could not get manifest for runtime {}".format(MANIFEST_KEY, jre_fname, self.name))
+            raise TypeError("Contents of key {} in file {} was not a dict; could not get manifest for runtime {}".format(MANIFEST_KEY, self.get_jre_manifest(), self.name))
 
         os_runtimes = jre_content.get(DESIRED_OS)
 
         if os_runtimes == None:
-            raise KeyError("Jre manifest file {} contained no runtimes for desired OS '{}'; could not get manifest for runtime {}".format(jre_fname, DESIRED_OS, self.name))
+            raise KeyError("Jre manifest file {} contained no runtimes for desired OS '{}'; could not get manifest for runtime {}".format(self.get_jre_manifest(), DESIRED_OS, self.name))
 
         if not isinstance(os_runtimes, dict):
-            raise TypeError("Contents of desired OS key '{}' in file {} was not a dict; could not get manifest for runtime {}".format(DESIRED_OS, jre_fname, self.name))
+            raise TypeError("Contents of desired OS key '{}' in file {} was not a dict; could not get manifest for runtime {}".format(DESIRED_OS, self.get_jre_manifest(), self.name))
 
-        runtime_data = os_runtimes.get(self.name)
+        runtime_list = os_runtimes.get(self.name)
+
+        if runtime_list == None:
+            raise KeyError("Jre manifest file {} contained no runtime named '{}' for desired OS '{}'; could not proceed.".format(self.get_jre_manifest(), self.name, DESIRED_OS))
+
+        if not isinstance(runtime_list, list):
+            raise TypeError("Contents of key '{}' for OS '{}' in file {} was not a list; could not get runtime information.".format(self.name, DESIRED_OS, self.get_jre_manifest()))
+
+        runtime_data = None
+        for obj in runtime_list:
+            if isinstance(obj, dict):
+                runtime_data = obj
 
         if runtime_data == None:
-            raise KeyError("Jre manifest file {} contained no runtime named '{}' for desired OS '{}'; could not proceed.".format(jre_fname, self.name, DESIRED_OS))
-
-        if not isinstance(runtime_data, dict):
-            raise TypeError("Contents of key '{}' for OS '{}' in file {} was not a dict; could not get runtime information.".format(self.name, DESIRED_OS, jre_fname))
+            raise TypeError("List under key '{}' for OS '{}' in file {} contained no dictionaries; could not get runtime information.".format(self.name, DESIRED_OS, self.get_jre_manifest()))
 
         runtime_manifest = runtime_data.get(MANIFEST_KEY)
 
         if runtime_manifest == None:
-            raise KeyError("Jre manifest file {} contained no key {} under {}; could not get manifest for runtime {}".format(jre_fname, MANIFEST_KEY, self.name, self.name))
+            raise KeyError("Jre manifest file {} contained no key {} under {}; could not get manifest for runtime {}".format(self.get_jre_manifest(), MANIFEST_KEY, self.name, self.name))
         if not isinstance(runtime_manifest, dict):
-            raise TypeError("Contents of key {} under {} in file {} was not a dict; could not get manifest for runtime {}".format(MANIFEST_KEY, self.name, jre_fname, self.name))
+            raise TypeError("Contents of key {} under {} in file {} was not a dict; could not get manifest for runtime {}".format(MANIFEST_KEY, self.name, self.get_jre_manifest(), self.name))
 
         sha1 = runtime_manifest.get(SHA1_KEY)
         url = runtime_manifest.get(URL_KEY)
