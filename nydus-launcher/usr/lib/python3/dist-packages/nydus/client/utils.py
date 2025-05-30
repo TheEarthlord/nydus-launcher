@@ -114,6 +114,19 @@ def get_minecraft_assets_path():
     return assets_path
 
 """
+Get path to location for a specific asset index's JSON file.
+Usually /home/<username>/.minecraft/assets/indexes/<index>.json
+Does not check whether the file actually exists.
+"""
+def get_asset_index_path(index):
+    if not validity.is_nonnegative_integer(index):
+        raise ValueError("Minecraft assets index must be a nonnegative integer. Was given {}".format(index))
+
+    assets_path = get_minecraft_assets_path()
+    json_path = os.path.join(assets_path, "indexes", "{}.json".format(index))
+    return json_path
+
+"""
 Returns a string; the path to the json file which gives information
 about all available Minecraft versions, inside the user's .minecraft folder.
 Specifically, this is

@@ -35,6 +35,7 @@ ARGUMENTS_KEY = "arguments"
 GAME_KEY = "game"
 JAVA_KEY = "javaVersion"
 COMPONENT_KEY = "component"
+ASSET_KEY = "assetIndex"
 
 DESIRED_ACTION = "allow"
 DESIRED_OS = "linux"
@@ -114,6 +115,8 @@ class MCVersion:
         # place or launching Minecraft will fail.
         self.jars = []
         self.main_class = ""
+        # Stores an exception to raise if we can't find a main class to use
+        self.main_class_exc = None
 
         # Sometimes the version json defines extra arguments to use in launching
         # Minecraft, mainly in the case of OptiFine.
@@ -129,6 +132,8 @@ class MCVersion:
 
         # String, absolute path to the java executable used to launch Minecraft
         self.java_bin = ""
+        # Stores an exception to raise if we can't find a java executable to use
+        self.java_bin_exc = None
 
         # Standard patterns based on who is logged in
         self.game_dir = utils.get_minecraft_path()
@@ -139,10 +144,18 @@ class MCVersion:
         # log_config may also be a DownloadFile obtained from the version json file
         self.log_config = ""
 
-        # Hard coded, observed from past Minecraft launches
-        self.asset_index = 16
-        self.user_type = "msa"
+        # Integer, refers to an element under .minecraft/assets/indexes
+        self.asset_index = 0
+        # The asset_index refers to a JSON file. This attribute
+        # contains either DownloadFile or a string for it.
+        self.asset_index_file = None
+        # Stores an exception to raise if we can't find an asset index
+        self.asset_index_exc = None
+
         self.version_type = "release"
+
+        # Hard coded, observed from past Minecraft launches
+        self.user_type = "msa"
 
         self.find_log_config()
         self.read_json_file()
@@ -198,6 +211,7 @@ class MCVersion:
         self.read_id(version_json)
         self.read_logging(version_json)
         self.read_class(version_json)
+        self.read_asset_index(version_json)
         self.read_arguments(version_json)
         self.read_runtime(version_json)
         self.read_jars(version_json)
@@ -369,31 +383,67 @@ class MCVersion:
     def read_runtime(self, version_json):
         assert isinstance(version_json, dict), "Must pass a dictionary represeting JSON to MCVersion.read_runtime. Instead, got {}".format(type(version_json))
 
-        # Either
-        # a) we do not already have a java runtime from an ancestor
-        #  then failure to get a java runtime from out own JSON is fatal
-        # b) we do have a runtime from an ancestor
-        #  then we want to use our own runtime if one exists,
-        #  but if we don't have our own, using the ancestor's is fine.
+        # Look for a java runtime in our own JSON file.
+        # If there is one, use it.
+        # But if there's not, store the relevant error.
+        # That error might be used if there is no runtime set by an ancestor.
 
-        our_runtime = None
-        our_java_bin = None
         java_dict = version_json.get(JAVA_KEY)
-        if isinstance(java_dict, dict):
-            prospective_runtime = java_dict.get(COMPONENT_KEY)
-            if validity.is_valid_java_runtime(prospective_runtime):
-                our_runtime = prospective_runtime
+        if java_dict == None:
+            self.java_bin_exc = KeyError("Could not get a valid java runtime from file {} for version {} to launch Minecraft; no key {}".format(self.get_json_file(), self.version, JAVA_KEY))
+        elif not isinstance(java_dict, dict):
+            self.java_bin_exc = TypeError("Could not get a valid java runtime from file {} for version {} to launch Minecraft; object under key {} was {} instead of dictionary".format(self.get_json_file(), self.version, JAVA_KEY, type(java_dict)))
+        else:
 
-        if our_runtime:
-            jr = JavaRuntime(our_runtime)
-            jr.setup_runtime()
-            our_java_bin = jr.get_java()
+            our_runtime = java_dict.get(COMPONENT_KEY)
+            if our_runtime == None:
+                self.java_bin_exc = KeyError("Could not get java runtime from file {} for version {} to launch Minecraft; no key {} under key {}".format(self.get_json_file(), self.version, COMPONENT_KEY, JAVA_KEY))
+            elif validity.is_valid_java_runtime(our_runtime):
+                jr = JavaRuntime(our_runtime)
+                jr.setup_runtime()
+                self.java_bin = jr.get_java()
+            else:
+                self.java_bin_exc = ValueError("Could not get java runtime from file {} for version {} to launch Minecraft; value '{}' under key {} was not a valid runtime".format(self.get_json_file(), self.version, our_runtime, COMPONENT_KEY))
 
-        if our_java_bin:
-            self.java_bin = our_java_bin
-        elif not self.java_bin:
-            raise KeyError("Could not get a valid java runtime from file {} for version {} to launch Minecraft. Runtime name must be under the key {} in the dictionary under the key {}.".format(self.get_json_file(), self.version, COMPONENT_KEY, JAVA_KEY))
+    """
+    version_json: a dictionary, the top level of the data structure returned
+        by parsing the JSON out of this Minecraft version's JSON file.
+    This method finds the asset index number which should be used when launching
+    Minecraft.
+    Returns nothing. Modifies the asset_index attribute if necessary.
+    """
+    def read_asset_index(self, version_json):
+        assert isinstance(version_json, dict), "Must pass a dictionary representing JSON to MCVersion.read_asset_index. Instead, got {}".format(type(version_json))
         
+        asset_dict = version_json.get(ASSET_KEY)
+
+        if asset_dict == None:
+            self.asset_index_exc = KeyError("Could not get assetIndex from file {} for Minecraft version {}; key {} was missing".format(self.get_json_file(), self.version, ASSET_KEY))
+        elif not isinstance(asset_dict, dict):
+            self.asset_index_exc = TypeError("Could not get assetIndex from file {} for Minecraft version {}; contents of key {} was not a dictionary".format(self.get_json_file(), self.version, ASSET_KEY))
+        else:
+            asset_id = asset_dict.get(ID_KEY)
+
+            if asset_id == None:
+                self.asset_index_exc = KeyError("Could not get assetIndex from file {} for Minecraft version {}; key {} was missing under key {}".format(self.get_json_file(), self.version, ID_KEY, ASSET_KEY))
+            elif isinstance(asset_id, int) or validity.is_nonnegative_integer(asset_id):
+                self.asset_index = int(asset_id)
+                url = asset_dict.get(URL_KEY)
+                sha1 = asset_dict.get(SHA1_KEY)
+
+                fpath = utils.get_asset_index_path(self.asset_index)
+
+                # Make DownloadFile if relevant
+                if url == None or sha1 == None:
+                    self.asset_index_file = fpath
+                else:
+                    dirpath = os.path.dirname(fpath)
+                    fname = os.path.basename(fpath)
+                    self.asset_index_file = DownloadFile(url, sha1, name=fname, path=dirpath)
+
+            else:
+                self.asset_index_exc = ValueError("Could not get assetIndex from file {} for Minecraft version {}; value '{}' is not a valid index".format(self.get_json_file(), self.version, asset_id))
+
 
     """
     version_json: a dictionary, the top level of the data structure returned
@@ -413,18 +463,14 @@ class MCVersion:
         #   but if we don't have our own, using the ancestor's is fine
 
         main_class = version_json.get(MAINCLASS_KEY)
-        
-        if not self.main_class:
 
-            if main_class == None:
-                raise ValueError("No key '{}' in file {} for version {}. Cannot get Main Class to launch Minecraft.".format(MAINCLASS_KEY, self.get_json_file(), self.version))
+        if main_class == None:
+            self.main_class_exc = ValueError("No key '{}' in file {} for version {}. Cannot get Main Class to launch Minecraft.".format(MAINCLASS_KEY, self.get_json_file(), self.version))
 
-            if not isinstance(main_class, str):
-                raise TypeError("Main Class for version {} in file {} was not a string. Instead it has type {} and looks like {}".format(self.version, self.get_json_file(), type(main_class), main_class))
+        elif not isinstance(main_class, str):
+            self.main_class_exc = TypeError("Main Class for version {} in file {} was not a string. Instead it has type {} and looks like {}".format(self.version, self.get_json_file(), type(main_class), main_class))
 
-            self.main_class = main_class
-
-        elif main_class and isinstance(main_class, str):
+        else:
             self.main_class = main_class
 
     """
@@ -663,7 +709,7 @@ class MCVersion:
             return self.log_config.get_fullpath()
 
     """
-    Everything which can be a DownloadFile (jars, log_config)
+    Everything which can be a DownloadFile (jars, log_config, asset_index_file)
     is checked. If not present and a DownloadFile, it is downloaded.
     If it's not a DownloadFile and not already installed, an Exception is raised.
     If this method completes without an Exception, all needed files should
@@ -687,6 +733,14 @@ class MCVersion:
         else:
             raise TypeError("In version {} found log config of unexpected type: {}".format(self.version, type(self.log_config)))
 
+        if isinstance(self.asset_index_file, str):
+            if not os.path.isfile(self.asset_index_file):
+                raise FileNotFoundError("Needed file {} for version {} does not exist and is not downloadable.".format(self.asset_index_file, self.version))
+        elif isinstance(self.asset_index_file, DownloadFile):
+            self.asset_index_file.download()
+        else:
+            raise TypeError("In version {} found asset index file of unexpected type: {}".format(self.version, type(self.asset_index_file)))
+
 
     """
     Returns a colon-concatenated string of absolute paths to all the jar files.
@@ -702,6 +756,25 @@ class MCVersion:
                 raise TypeError("Entry in Jars list of unexpected type: {}".format(type(jar)))
 
         return CPJAR_SEPARATOR.join(jarpaths)
+
+    """
+    Checks that the MCVersion instance is ready for launch.
+    There are some pieces of data which need to contain valid
+    values, whether from the current version's settings or an ancestor,
+    if the launch is to be possible.
+    If any of these is missing, this function raises an exception.
+    Otherwise, returns nothing.
+    """
+    def launch_ready(self):
+        
+        if not validity.is_nonempty_str(self.main_class):
+            raise self.main_class_exc
+
+        if not os.path.isfile(self.java_bin):
+            raise self.java_bin_exc
+
+        if not (isinstance(self.asset_index, int) and self.asset_index > 0):
+            raise self.asset_index_exc
 
     """
     Launches an instance of Minecraft of the version
@@ -722,7 +795,10 @@ class MCVersion:
         else:
             raise TypeError("In version {} found log config of unexpected type: {}".format(self.version, type(self.log_config)))
 
-        launch_command = "{} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex 16 --uuid {} --accessToken {} --userType msa --versionType {}".format(
+        # Raises exceptions if any necessary data is missing
+        self.launch_ready()
+
+        launch_command = "{} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex {} --uuid {} --accessToken {} --userType msa --versionType {}".format(
             self.java_bin,
             self.get_cpjars(),
             logc_path,
@@ -731,6 +807,7 @@ class MCVersion:
             self.version,
             self.game_dir,
             self.assets_dir,
+            self.asset_index,
             self.mc_account.get_uuid(),
             self.mc_account.get_token(),
             self.version_type
