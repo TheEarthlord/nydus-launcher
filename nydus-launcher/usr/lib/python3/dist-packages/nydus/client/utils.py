@@ -114,12 +114,17 @@ def get_minecraft_assets_path():
     return assets_path
 
 """
+index: an integer or string representing an integer. Must be nonnegative.
 Get path to location for a specific asset index's JSON file.
 Usually /home/<username>/.minecraft/assets/indexes/<index>.json
 Does not check whether the file actually exists.
 """
 def get_asset_index_path(index):
-    if not validity.is_nonnegative_integer(index):
+
+    valid_index = validity.is_nonnegative_integer(index) or\
+        (isintance(index, int) and index > 0)
+
+    if not valid_index:
         raise ValueError("Minecraft assets index must be a nonnegative integer. Was given {}".format(index))
 
     assets_path = get_minecraft_assets_path()
