@@ -241,6 +241,8 @@ class MCVersion:
         # and log config are taken from the current version's JSON file,
         # newer data will override the old as desired.
         self.main_class = ancestor.get_main_class()
+        self.asset_index = ancestor.get_asset_index()
+        self.asset_index_file = utils.get_asset_index_path(self.asset_index)
         self.jars.extend(ancestor.get_jar_paths())
         self.log_config = ancestor.get_log_config_path()
         self.java_bin = ancestor.get_java_bin()
@@ -689,6 +691,9 @@ class MCVersion:
 
     def get_main_class(self):
         return self.main_class
+
+    def get_asset_index(self):
+        return self.asset_index
 
     def get_java_bin(self):
         return self.java_bin
