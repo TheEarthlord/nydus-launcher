@@ -177,6 +177,9 @@ class MCVersion:
     If there are multiple xml files, the first one found will be used.
     Raises an Exception if such a file can't be found.
     """
+    # TODO
+    # the log xml file and where to download it from is in the version json
+    # include that.
     def find_log_config(self):
         log_cdir = self.get_log_config_dir()
         if not os.path.isdir(log_cdir):
