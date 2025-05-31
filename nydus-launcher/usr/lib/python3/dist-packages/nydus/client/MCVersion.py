@@ -139,9 +139,6 @@ class MCVersion:
         self.game_dir = utils.get_minecraft_path()
         self.assets_dir = utils.get_minecraft_assets_path()
 
-        # Computed by looking under the assets dir
-        # TODO
-        # log_config may also be a DownloadFile obtained from the version json file
         self.log_config = ""
 
         # Integer, refers to an element under .minecraft/assets/indexes
@@ -157,7 +154,6 @@ class MCVersion:
         # Hard coded, observed from past Minecraft launches
         self.user_type = "msa"
 
-        self.find_log_config()
         self.read_json_file()
 
     """
@@ -177,9 +173,6 @@ class MCVersion:
     If there are multiple xml files, the first one found will be used.
     Raises an Exception if such a file can't be found.
     """
-    # TODO
-    # the log xml file and where to download it from is in the version json
-    # include that.
     def find_log_config(self):
         log_cdir = self.get_log_config_dir()
         if not os.path.isdir(log_cdir):
@@ -213,6 +206,10 @@ class MCVersion:
         self.process_ancestors(version_json)
         self.read_id(version_json)
         self.read_logging(version_json)
+        if self.log_config == None:
+            # If we can't get the log config file from the JSON,
+            # try for any xml configs that might already be present
+            self.find_log_config()
         self.read_class(version_json)
         self.read_asset_index(version_json)
         self.read_arguments(version_json)
