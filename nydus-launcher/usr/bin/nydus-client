@@ -135,7 +135,7 @@ so all the windows close.
 """
 def close_status_window():
     with STATUS_LOCK:
-        STATUS = len(STATUS_MESSAGES)
+        STATUS = len(STATUS_MESSAGES) + 1
 
 """
 After we close Minecraft, we establish another connection to
