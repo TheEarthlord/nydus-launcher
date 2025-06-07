@@ -134,6 +134,8 @@ Advance window status number beyond the last message
 so all the windows close.
 """
 def close_status_window():
+    global STATUS
+
     with STATUS_LOCK:
         STATUS = len(STATUS_MESSAGES) + 1
 
