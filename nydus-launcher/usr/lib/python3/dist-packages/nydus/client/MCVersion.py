@@ -2,6 +2,7 @@ import subprocess
 import os
 import json
 import re
+import hashlib
 from json.decoder import JSONDecodeError
 from nydus.common import validity
 from nydus.client import utils
@@ -36,11 +37,14 @@ GAME_KEY = "game"
 JAVA_KEY = "javaVersion"
 COMPONENT_KEY = "component"
 ASSET_KEY = "assetIndex"
+JVM_KEY = "jvm"
 
 DESIRED_ACTION = "allow"
 DESIRED_OS = "linux"
 
 CPJAR_SEPARATOR = ":"
+VARNAME_START = "${"
+VARNAME_END = "}"
 
 # TODO
 # There are lots more parameters in the version json file that this
@@ -53,6 +57,9 @@ CPJAR_SEPARATOR = ":"
 # different Minecraft versions available. Specifically, it gives where to
 # download a json file for each version, and this json tells you the rest
 # you need to know.
+
+# It seems version_manifest_v2.json is downloaded from
+# https://launchermeta.mojang.com/mc/game/version_manifest_v2.json
 
 # Each of those version-specific json files is placed under
 # ~/.minecraft/versions/<version>/<version>.json
@@ -125,6 +132,11 @@ class MCVersion:
         # anyway, but there are a few args we need to actually read out of the json.
         # The arg_pairs list stores these strings in order.
         self.arg_pairs = []
+
+        # List of strings. Usually of the form
+        # -arg or -arg=value
+        # Mostly this is where the natives directory is specified.
+        self.jvm_args = []
 
         # MCAccount contains username, uuid, access token
         # Data obtained from server.
@@ -213,6 +225,7 @@ class MCVersion:
         self.read_class(version_json)
         self.read_asset_index(version_json)
         self.read_arguments(version_json)
+        self.read_natives_arguments(version_json)
         self.read_runtime(version_json)
         self.read_jars(version_json)
 
@@ -243,6 +256,8 @@ class MCVersion:
         self.main_class = ancestor.get_main_class()
         self.asset_index = ancestor.get_asset_index()
         self.asset_index_file = utils.get_asset_index_path(self.asset_index)
+        self.arg_pairs.extend(ancestor.get_arg_pairs())
+        self.jvm_args.extend(ancestor.get_jvm_args())
         self.jars.extend(ancestor.get_jar_paths())
         self.log_config = ancestor.get_log_config_path()
         self.java_bin = ancestor.get_java_bin()
@@ -300,6 +315,53 @@ class MCVersion:
         self.log_config = lconfig_df
 
     """
+    version_json: a dictionary, the top level of the data structure
+        returned by parsing the JSON out of this Minecraft version's
+        JSON file.
+    This method looks at arguments for the JVM when launching it,
+    in particular those which specify the natives directory.
+    Returns nothing. Modifies the jvm_args attribute if necessary.
+    """
+    def read_natives_arguments(self, version_json):
+        assert isinstance(version_json, dict), "Must pass a dictionary representing JSON to MCVersion.read_natives_arguments. Instead, got {}".format(type(version_json))
+        # The key "arguments" should contain a dictionary which
+        # contains the key "jvm" which contains a list. Some of
+        # the elements in the list are strings, some are
+        # dictionaries. We ignore the dictionaries.
+        # The strings are usually of the form
+        # -argname=${varname}
+        # We're only interested in the ones using the
+        # natives_directory variable.
+
+        arg_block = version_json.get(ARGUMENTS_KEY)
+
+        if arg_block and isinstance(arg_block, dict):
+            jvm_args = arg_block.get(JVM_KEY)
+
+            if jvm_args and isinstance(jvm_args, list):
+                
+                argstrings = [s for s in jvm_args if isinstance(s, str)]
+
+
+                for arg in argstrings:
+                    varstart = arg.find(VARNAME_START)
+                    varend = arg.find(VARNAME_END)
+                    equals = arg.find("=")
+                    if arg.startswith("-") and varstart != -1 and varend != -1 and equals != -1\
+                        and equals == varstart - 1 and varstart < varend:
+                        # The arg contains a variable string
+
+                        varname = arg[varstart+2:varend]
+
+                        desired_varname = "natives_directory"
+
+                        if varname == desired_varname:
+                            argname = arg[:varstart]
+                            filled_arg = argname + self.get_natives_dir()
+                            self.jvm_args.append(filled_arg)
+
+
+    """
     version_json: a dictionary, the top level of the data structure returned
         by parsing the JSON out of this Minecraft version's JSON file.
     This method finds all the arguments which we're supposed to give to
@@ -345,7 +407,7 @@ class MCVersion:
                         # A key without a value, since we would have seen its value first
 
                         self.arg_pairs.append(elem)
-                    elif elem.startswith("${") and elem.endswith("}"):
+                    elif elem.startswith(VARNAME_START) and elem.endswith(VARNAME_END):
                         # A value to be filled with a variable.
                         # We don't have a good general solution for these,
                         # so we ignore them.
@@ -686,6 +748,20 @@ class MCVersion:
         if os.path.isfile(main_jar_path):
             self.jars.append(main_jar_path)
     
+    def get_natives_dir(self):
+        # The natives dir used by the official MC launcher is
+        # .minecraft/bin/<some-hash>
+        # with a different hash for each version.
+        # I can't figure out what string is hashed to get that directory,
+        # so we're making our own.
+        hashclass = hashlib.sha1()
+        version_bytes = self.version.encode("utf-8")
+
+        hashclass.update(version_bytes)
+        version_hash = hashclass.hexdigest()
+        natives_dir = os.path.join(utils.get_minecraft_path(), "bin", version_hash)
+        return natives_dir
+
     def get_version(self):
         return self.version
 
@@ -697,6 +773,12 @@ class MCVersion:
 
     def get_java_bin(self):
         return self.java_bin
+
+    def get_arg_pairs(self):
+        return self.arg_pairs
+
+    def get_jvm_args(self):
+        return self.jvm_args
     
     def get_jar_paths(self):
         jar_paths = []
@@ -803,7 +885,8 @@ class MCVersion:
         # Raises exceptions if any necessary data is missing
         self.launch_ready()
 
-        launch_command = "{} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex {} --uuid {} --accessToken {} --userType msa --versionType {}".format(
+        launch_command = "{} {} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex {} --uuid {} --accessToken {} --userType msa --versionType {}".format(
+            " ".join(self.jvm_args),
             self.java_bin,
             self.get_cpjars(),
             logc_path,
