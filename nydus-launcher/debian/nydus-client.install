@@ -7,5 +7,6 @@ usr/lib/python3/dist-packages/nydus/client/MCVersion.py
 usr/lib/python3/dist-packages/nydus/client/StatusMsg.py
 usr/lib/python3/dist-packages/nydus/client/utils.py
 usr/share/applications/nydus-client.desktop
+usr/share/icons/nydus-launcher/nydus-launcher.svg
 usr/share/man/man1/nydus-client.1
 usr/share/man/man5/nydus-client.conf.5
