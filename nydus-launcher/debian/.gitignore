@@ -10,3 +10,5 @@ nydus-common
 nydus-test
 files
 *.substvars
+nydus-client.postinst.debhelper
+nydus-client.postrm.debhelper
