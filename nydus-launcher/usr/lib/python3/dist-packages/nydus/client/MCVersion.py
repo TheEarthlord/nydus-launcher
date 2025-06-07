@@ -886,8 +886,8 @@ class MCVersion:
         self.launch_ready()
 
         launch_command = "{} {} -cp {} -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dlog4j.configurationFile={} {} --username {} --version {} --gameDir {} --assetsDir {} --assetIndex {} --uuid {} --accessToken {} --userType msa --versionType {}".format(
-            " ".join(self.jvm_args),
             self.java_bin,
+            " ".join(self.jvm_args),
             self.get_cpjars(),
             logc_path,
             self.main_class,
