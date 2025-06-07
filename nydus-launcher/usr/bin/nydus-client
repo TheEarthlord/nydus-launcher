@@ -49,6 +49,7 @@ STATUS_LOCK = threading.Lock()
 
 # In milliseconds
 WINDOW_CHECK_PERIOD = 1000
+LAUNCH_WAIT_PERIOD = 10000
 
 # This function is called by tkinter root widgets
 # to check if their status messages should still be
@@ -65,6 +66,8 @@ def check_window(root, msg_id):
         else:
             root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
 
+def destroy_window(root):
+    root.destroy()
 
 def make_window(status_msg):
     assert isinstance(status_msg, StatusMsg), "Must pass a StatusMsg instance to create a status window. Instead, got a {}".format(type(status_msg))
@@ -75,7 +78,12 @@ def make_window(status_msg):
     frame = ttk.Frame(root, padding=10)
     frame.grid()
     ttk.Label(frame, text=msg_text).grid(column=0, row=0)
-    root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
+
+    if msg_id == len(STATUS_MESSAGES):
+        # Last message; launch
+        root.after(LAUNCH_WAIT_PERIOD, destroy_window, root)
+    else:
+        root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
 
     root.mainloop()
 
@@ -231,6 +239,10 @@ def request(ssock):
 
     mc_instance.launch()
 
+    # Launch message should have closed before Minecraft finishes
+    # loading and can be closed by the user, but we make sure to close
+    # the message window after the Minecraft process exists just
+    # in case.
     close_status_window()
 
 def client_main(cfg):
