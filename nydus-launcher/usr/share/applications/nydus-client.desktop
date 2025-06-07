@@ -6,7 +6,7 @@ Type=Application
 Terminal=false
 Icon[en_AU]=/usr/share/icons/nydus-launcher/nydus-launcher.svg
 Name[en_AU]=Minecraft
-Exec=/usr/share/nydus-client
+Exec=/usr/bin/nydus-client
 Name=Minecraft
 Icon=/usr/share/icons/nydus-launcher/nydus-launcher.svg
 
