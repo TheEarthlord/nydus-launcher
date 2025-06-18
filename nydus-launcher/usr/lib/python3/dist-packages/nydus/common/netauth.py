@@ -272,7 +272,7 @@ def get_tok_minecraft(access_token):
 
         if minecraft_resp.status_code == TOO_MANY_REQUESTS:
             # Getting a 429 means we've hit a rate limit and need to wait
-            print("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_AUTH_URL, MC_WAIT_DURATION))
+            server_log("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_AUTH_URL, MC_WAIT_DURATION))
             time.sleep(MC_WAIT_DURATION)
         else:
             break
@@ -318,7 +318,7 @@ def get_minecraft_details(access_token):
 
         if profile_resp.status_code == TOO_MANY_REQUESTS:
             # Getting a 429 means we've hit a rate limit and need to wait
-            print("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_PROFILE_URL, MC_WAIT_DURATION))
+            server_log("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_PROFILE_URL, MC_WAIT_DURATION))
             time.sleep(MC_WAIT_DURATION)
         else:
             break
@@ -518,7 +518,7 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
 
     assert isinstance(app, PublicClientApplication), "Must pass an MSAL PublicClientApplication to auth_all. Instead, a {} was passed.".format(type(app))
 
-    print("Beginning authentication of accounts")
+    server_log("Beginning authentication of accounts")
 
     auth_results = {}
     
@@ -536,9 +536,7 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
             # Authentication failed somehow
 
             error_msg = traceback.format_exc()
-            print("Failed to auth user {} with the following error:".format(username))
-            print(error_msg)
-            print()
+            server_log("Failed to auth user {} with the following error:\n{}".format(username, error_msg))
             tokens = None
         auth_results[username] = tokens
 

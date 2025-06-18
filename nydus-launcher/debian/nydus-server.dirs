@@ -4,3 +4,4 @@ usr/lib/python3/dist-packages/nydus/server
 usr/lib/systemd/system
 usr/share/man/man1
 usr/share/man/man5
+var/log/nydus
