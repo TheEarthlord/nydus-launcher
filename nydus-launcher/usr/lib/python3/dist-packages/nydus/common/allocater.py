@@ -7,6 +7,7 @@ from nydus.common.MCAccount import MCAccount
 from nydus.common.AccessToken import AccessToken
 from nydus.common.AccountAuthTokens import AccountAuthTokens
 from nydus.common import validity
+from nydus.server.log import log_server
 
 # Decides which account to give to a client requesting an account.
 # Stores the currently allocated accounts in a file.
@@ -652,10 +653,17 @@ class AllocEngine:
             if acc.is_allocated() and acc.get_client_ip() == client_ip:
                 acc.release()
 
+                log_server("Released account {} which was allocated to IP {} and username {} because IP {} has requested a new account".format(\
+                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+
         for acc in self.accounts:
             if not acc.is_allocated():
                 acc.allocate(client_ip, client_username)
                 self.write_changes()
+
+                log_server("Allocated account {} to IP {} and username {} because an account was requested by IP {}".format(\
+                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+
                 return acc
         return None
 
@@ -676,6 +684,11 @@ class AllocEngine:
             acc.release()
         self.write_changes()
 
+        for acc in to_release:
+            log_server("Released account {} which was allocated to IP {} and username {}; release of account with uuid {} was requested".format(\
+                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
+
+
     """
     Finds all accounts allocated to the given client IP
     and releases them.
@@ -690,6 +703,10 @@ class AllocEngine:
         for acc in to_release:
             acc.release()
         self.write_changes()
+
+        for acc in to_release:
+            log_server("Released account {} which was allocated to IP {} and username {}; release of accounts allocated to IP {} was requested".format(\
+                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
     
     """
     Finds an account (or all accounts if there are more than one) of a specific
@@ -713,6 +730,10 @@ class AllocEngine:
             acc.allocate(client_ip, client_username)
 
         self.write_changes()
+
+        for acc in to_allocate:
+            log_server("Allocated account {} to IP {} and username {}; an allocation was requested for uuid {}".format(\
+                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
 
     """
     aat_list: a list of AccountAuthTokens instances.
@@ -772,4 +793,7 @@ class AllocEngine:
         for acc in self.accounts:
             if acc.alloc_expired():
                 acc.release()
+                log_server("Released account {} which was allocated to IP {} and username {}; allocation expired".format(\
+                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+
 
