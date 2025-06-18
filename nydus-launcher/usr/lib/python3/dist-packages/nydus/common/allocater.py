@@ -63,6 +63,8 @@ from nydus.server.log import log_server
 # with the new one.
 # This needs to happen periodically. How often?
 
+RESERVED_TOKEN = "RESERVED"
+
 ALLOC_FILE = "nydus-alloc.csv"
 
 ALLOC_DELIM = ","
@@ -72,6 +74,7 @@ ALLOC_DELIM = ","
 ALLOC_TIMEOUT = datetime.timedelta(hours=2)
 
 FIELDS = [
+    "reserved",
     "client_ip",
     "client_username",
     "alloc_time",
@@ -90,6 +93,7 @@ FIELDS = [
 ]
 
 SUMMARY_FIELDS = [
+    "reserved",
     "client_ip",
     "client_username",
     "alloc_time",
@@ -100,6 +104,7 @@ SUMMARY_FIELDS = [
 SUMMARY_DELIM = "|"
 
 SUMMARY_PADDINGS = [
+    8,
     15,
     20,
     19,
@@ -129,11 +134,12 @@ class AllocAccount:
     and want to use that directly, call the class method
     AllocAccount.create_from_aat()
     """
-    def __init__(self, client_ip, client_username, alloc_time,
+    def __init__(self, reserved, client_ip, client_username, alloc_time,
             ms_username, msal_token, msal_expiry, xboxlive_token,
             xboxlive_expiry, xsts_token, xsts_expiry, xsts_hash,
             mc_token, mc_expiry, mc_username, mc_uuid):
 
+        self.set_reserved(reserved)
         self.set_client_ip(client_ip)
         self.set_client_username(client_username)
         self.set_alloc_time(alloc_time)
@@ -180,12 +186,13 @@ class AllocAccount:
     strings, and they should be if the database file is being created
     from scratch.
     """
-    def create_from_aat(client_ip, client_username, alloc_time, aat):
+    def create_from_aat(reserved, client_ip, client_username, alloc_time, aat):
 
         if not isinstance(aat, AccountAuthTokens):
             raise TypeError("To create an AllocAccount using AccountAuthTokens, an AccountAuthTokens instance must be provided. Instead, {} was given.".format(type(aat)))
 
         return AllocAccount(
+            reserved,
             client_ip,
             client_username,
             alloc_time,
@@ -236,7 +243,13 @@ class AllocAccount:
     """
     def summary(self):
         summary_blocks = []
+            
+        reserved_field = ""
+        if self.is_reserved():
+            reserved_field = RESERVED_TOKEN
+
         fields = [
+            self.get_reserved_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -259,6 +272,7 @@ class AllocAccount:
 
     def copy(self):
         return AllocAccount(
+            self.get_reserved_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -276,17 +290,56 @@ class AllocAccount:
             return True
         return False
 
+    """
+    Returns True if allocation was successful, False otherwise
+    Note: "successful" doesn't refer to writing the change to
+    the allocation database, just to setting the data structure to
+    being allocated in program memory.
+    """
     def allocate(self, client_ip, client_username):
+        if self.is_reserved():
+            log_server("Tried to allocate account {} with uuid {} to IP {} and username {}, but it was reserved".format(\
+                    self.get_ms_username(), self.get_mc_uuid(), client_ip, client_username))
+            return False
         now = datetime.datetime.now()
         now_str = now.strftime(TIME_FORMAT)
         self.set_client_ip(client_ip)
         self.set_client_username(client_username)
         self.set_alloc_time(now_str)
+        return True
 
+    """
+    Returns True if release was successful, False otherwise
+    """
     def release(self):
+        if self.is_reserved():
+            log_server("Tried to release account {} with uuid {}, but it was reserved".format(\
+                    self.get_ms_username(), self.get_mc_uuid()))
+            return False
         self.set_client_ip("")
         self.set_client_username("")
         self.set_alloc_time("")
+        return True
+
+    """
+    If an account is "reserved", it will not be allocated
+    or released. Reservation can only be set and unset
+    by directly using nydus-cli; it won't be done automatically
+    by the server.
+    Reservation is intended for if a machine needs to be able to
+    log into Minecraft but can't run the Nydus Launcher client.
+    Reserve one of the Minecraft accounts so it won't get
+    allocated somewhere else, then use it freely on the no-Nydus
+    machine.
+    """
+    def is_reserved(self):
+        return self.account_reserved
+
+    def reserve(self):
+        self.account_reserved = True
+
+    def unreserve(self):
+        self.account_reserved = False
 
     # Type checks for the 'update' methods
     # occur inside the AccountAuthTokens method where applicable
@@ -311,9 +364,13 @@ class AllocAccount:
     """
     Returns True if the account is allocated and has been allocated
     for longer than the alloc timeout.
-    Otherwise, return False (including if the account is not allocated)
+    Otherwise, return False (including if the account is not allocated,
+    or is reserved)
     """
     def alloc_expired(self):
+
+        if self.is_reserved():
+            return False
         now = datetime.datetime.now()
         if self.get_alloc_time():
             if now - self.get_alloc_time() > ALLOC_TIMEOUT:
@@ -344,6 +401,18 @@ class AllocAccount:
     def minecraft_needs_renewal(self, check_interval, num_intervals=2):
         return self.aat.get_minecraft_token().needs_renewal(check_interval, num_intervals)
 
+    """
+    reserved_token: string, from the alloc database.
+    Should be contents of RESERVED_TOKEN or empty string
+    """
+    def set_reserved(self, reserved_token):
+        if reserved_token == RESERVED_TOKEN:
+            self.account_reserved = True
+        elif reserved == "":
+            self.account_reserved = False
+        else:
+            raise ValueError("Reserved state entry must be either {} or ''. Instead, got {}".format(RESERVED_TOKEN, reserved_token))
+
     # We must allow empty string for client_ip, client_username, and
     # alloc time as empty strings for them indicate an unallocated account
     def set_client_ip(self, client_ip):
@@ -371,6 +440,12 @@ class AllocAccount:
             self.aat = aat
         else:
             raise TypeError("Object given is not an AccountAuthTokens class: {}".format(aat))
+
+    def get_reserved_state(self):
+        if self.is_reserved:
+            return RESERVED_TOKEN
+        else:
+            return ""
 
     def get_client_ip(self):
         return self.client_ip
@@ -454,6 +529,7 @@ class AllocAccount:
     """
     def __repr__(self):
         fields = [
+            self.get_reserved_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -651,20 +727,24 @@ class AllocEngine:
         # Release everything currently allocated to this client
         for acc in self.accounts:
             if acc.is_allocated() and acc.get_client_ip() == client_ip:
-                acc.release()
-
-                log_server("Released account {} which was allocated to IP {} because IP {} has requested a new account".format(\
-                        acc.get_ms_username(), client_ip, client_ip))
+                
+                result = acc.release()
+                
+                if result:
+                    log_server("Released account {} which was allocated to IP {} because IP {} has requested a new account".format(\
+                            acc.get_ms_username(), client_ip, client_ip))
 
         for acc in self.accounts:
             if not acc.is_allocated():
-                acc.allocate(client_ip, client_username)
-                self.write_changes()
+                result = acc.allocate(client_ip, client_username)
 
-                log_server("Allocated account {} to IP {} and username {} because an account was requested by IP {}".format(\
-                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+                if result:
+                    self.write_changes()
 
-                return acc
+                    log_server("Allocated account {} to IP {} and username {} because an account was requested by IP {}".format(\
+                            acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+
+                    return acc
         return None
 
     """
@@ -681,13 +761,12 @@ class AllocEngine:
                 if acc.is_allocated() and acc.get_mc_uuid() == uuid]
 
         for acc in to_release:
-            acc.release()
+            result = acc.release()
+            if result:
+                log_server("Released account {}; release of account with uuid {} was requested".format(\
+                        acc.get_ms_username(), uuid))
+
         self.write_changes()
-
-        for acc in to_release:
-            log_server("Released account {}; release of account with uuid {} was requested".format(\
-                    acc.get_ms_username(), uuid))
-
 
     """
     Finds all accounts allocated to the given client IP
@@ -701,12 +780,12 @@ class AllocEngine:
                 if acc.is_allocated() and acc.get_client_ip() == client_ip]
 
         for acc in to_release:
-            acc.release()
-        self.write_changes()
+            result = acc.release()
+            if result:
+                log_server("Released account {}; release of accounts allocated to IP {} was requested".format(\
+                        acc.get_ms_username(), client_ip))
 
-        for acc in to_release:
-            log_server("Released account {}; release of accounts allocated to IP {} was requested".format(\
-                    acc.get_ms_username(), client_ip))
+        self.write_changes()
     
     """
     Finds an account (or all accounts if there are more than one) of a specific
@@ -727,13 +806,49 @@ class AllocEngine:
                 if acc.get_mc_uuid() == uuid]
 
         for acc in to_allocate:
-            acc.allocate(client_ip, client_username)
+            result = acc.allocate(client_ip, client_username)
+            if result:
+                log_server("Allocated account {} to IP {} and username {}; an allocation was requested for uuid {}".format(\
+                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
 
         self.write_changes()
 
-        for acc in to_allocate:
-            log_server("Allocated account {} to IP {} and username {}; an allocation was requested for uuid {}".format(\
-                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
+    """
+    Finds an account (or all accounts if there are more than one) of a specific
+    uuid, and reserves them.
+    Reservation means an account can't be allocated by any means until unreserved.
+    """
+    def reserve_uuid(self, uuid):
+        if not validity.is_valid_minecraft_uuid(uuid):
+            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
+
+        to_reserve = [acc for acc in self.accounts\
+                if acc.get_mc_uuid() == uuid]
+
+        for acc in to_reserve:
+            acc.reserve()
+            log_server("Reserved account {} with uuid {}".format(\
+                    acc.get_ms_username(), acc.get_mc_uuid())
+        self.write_changes()
+
+    """
+    Finds an account (or all accounts if there are more than one) of a specific
+    uuid, and unreserves them.
+    Reservation means an account can't be allocated by any means until unreserved.
+    """
+    def unreserve_uuid(self, uuid):
+        if not validity.is_valid_minecraft_uuid(uuid):
+            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
+
+        to_unreserve = [acc for acc in self.accounts\
+                if acc.get_mc_uuid() == uuid]
+
+        for acc in to_unreserve:
+            acc.unreserve()
+            log_server("Unreserved account {} with uuid {}".format(\
+                    acc.get_ms_username(), acc.get_mc_uuid())
+        self.write_changes()
+
 
     """
     aat_list: a list of AccountAuthTokens instances.
@@ -755,7 +870,7 @@ class AllocEngine:
             raise ValueError("create_db is intended to be called when no accounts were found in the allocation db file, but AllocEngine found {} accounts".format(len(self.accounts)))
 
         for aat in aat_list:
-            self.accounts.append(AllocAccount.create_from_aat("", "", "", aat))
+            self.accounts.append(AllocAccount.create_from_aat("", "", "", "", aat))
 
         self.write_changes()
 
@@ -782,7 +897,7 @@ class AllocEngine:
                 raise TypeError("The aat list given to extend_db must contain only AccountAuthTokens, but found a {}".format(type(elem)))
 
         for aat in aat_list:
-            self.accounts.append(AllocAccount.create_from_aat("", "", "", aat))
+            self.accounts.append(AllocAccount.create_from_aat("", "", "", "", aat))
 
         self.write_changes()
 
@@ -791,9 +906,10 @@ class AllocEngine:
     """
     def release_expired(self):
         for acc in self.accounts:
-            if acc.alloc_expired():
-                acc.release()
-                log_server("Released account {}; allocation expired".format(\
-                        acc.get_ms_username()))
+            if acc.alloc_expired() and not acc.is_reserved():
+                result = acc.release()
+                if result:
+                    log_server("Released account {}; allocation expired".format(\
+                            acc.get_ms_username()))
 
 

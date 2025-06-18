@@ -66,6 +66,12 @@ You can start the Nydus Launcher server by simply invoking
 from the command line, but it is recommended to instead
 use the systemd service included in the Debian package.
 
+While running,
+.BR nydus-server
+outputs log messages to
+.IR /var/log/nydus/nydus-server.log.
+It empties this file each time it is restarted.
+
 The Nydus Launcher suite also includes the program
 .BR nydus-cli (1)
 which is intended to manually manipulate the database of

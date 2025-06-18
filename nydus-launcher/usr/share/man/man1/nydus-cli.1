@@ -105,6 +105,24 @@ Release all Minecraft accounts which are allocated to the specified
 client IP address from their allocations.
 .RE
 
+.SS reserve-uuid <uuid>
+.RS 2
+This command reserves the Minecraft account with the specified uuid.
+A reserved account cannot be allocated, and a reserved account can
+only be unreserved by user's command through Nydus Cli.
+This may be useful if there are machines which need to log into Minecraft
+using some of the accounts the Nydus Launcher is managing, but those machines cannot
+run the Nydus Client to obtain allocations the normal way.
+Reserve enough accounts for those machines to ensure the accounts won't be used
+elsewhere at the same time, then log in to Minecraft manually.
+.RE
+
+.SS unreserve-uuid <uuid>
+.RS 2
+This command unreserves the Minecraft account with the specified uuid.
+This allows the account to be allocated as normal.
+.RE
+
 .SS cleanup
 .RS 2
 Perform a routine cleanup of the allocation database, as
