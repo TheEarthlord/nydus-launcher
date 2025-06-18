@@ -181,7 +181,7 @@ def server_main(cfg, app):
     listen_thread = threading.Thread(target=server_listener, args=(cfg,))
     listen_thread.start()
 
-    log_server("Nydus Server listening for connections...")
+    log_server("Nydus Server listening for connections on port {}...".format(cfg.get_port()))
 
     # Every so often trigger a thread to cleanup allocated accounts
     while True:
