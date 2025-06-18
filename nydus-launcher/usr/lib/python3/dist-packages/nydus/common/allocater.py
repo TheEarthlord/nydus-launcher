@@ -828,7 +828,7 @@ class AllocEngine:
         for acc in to_reserve:
             acc.reserve()
             log_server("Reserved account {} with uuid {}".format(\
-                    acc.get_ms_username(), acc.get_mc_uuid())
+                    acc.get_ms_username(), acc.get_mc_uuid()))
         self.write_changes()
 
     """
@@ -846,7 +846,7 @@ class AllocEngine:
         for acc in to_unreserve:
             acc.unreserve()
             log_server("Unreserved account {} with uuid {}".format(\
-                    acc.get_ms_username(), acc.get_mc_uuid())
+                    acc.get_ms_username(), acc.get_mc_uuid()))
         self.write_changes()
 
 
