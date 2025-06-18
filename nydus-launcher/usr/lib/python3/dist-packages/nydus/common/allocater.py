@@ -408,7 +408,7 @@ class AllocAccount:
     def set_reserved(self, reserved_token):
         if reserved_token == RESERVED_TOKEN:
             self.account_reserved = True
-        elif reserved == "":
+        elif reserved_token == "":
             self.account_reserved = False
         else:
             raise ValueError("Reserved state entry must be either {} or ''. Instead, got {}".format(RESERVED_TOKEN, reserved_token))
