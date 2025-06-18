@@ -12,7 +12,8 @@ from nydus.common.MCAccount import MCAccount
 from nydus.common import alloc_utils
 from nydus.common import netauth
 from nydus.common import validity
-from nydus.server.log import server_log
+from nydus.server.log import log_server
+from nydus.server.log import restart_server_log
 from nydus.server.ServerConfig import ServerConfig
 
 # The lock which controls access to the account allocation file
@@ -87,7 +88,7 @@ def handle_connection(cfg, conn, addr):
     try:
         client_exchange(cfg, conn, addr)
     except TimeoutError:
-        server_log("Client {} took too long to respond".format(addr))
+        log_server("Client {} took too long to respond".format(addr))
 
 def client_exchange(cfg, conn, addr):
 
@@ -142,10 +143,10 @@ def client_exchange(cfg, conn, addr):
             release_account(cfg, conn, addr)
 
         else:
-            server_log("Invalid connection from host {}".format(addr))
+            log_server("Invalid connection from host {}".format(addr))
     except Exception:
         error_msg = traceback.format_exc()
-        server_log(error_msg, end="")
+        log_server(error_msg, end="")
 
     conn.close()
 
@@ -180,7 +181,7 @@ def server_main(cfg, app):
     listen_thread = threading.Thread(target=server_listener, args=(cfg,))
     listen_thread.start()
 
-    server_log("Nydus Server listening for connections...")
+    log_server("Nydus Server listening for connections...")
 
     # Every so often trigger a thread to cleanup allocated accounts
     while True:
@@ -190,11 +191,27 @@ def server_main(cfg, app):
         time.sleep(CLEANUP_PERIOD)
 
 def main():
-    cfg = startup()
-    app = netauth.create_msal_app(cfg.get_msal_cid())
-    alloc_utils.initialise_accounts(cfg, app)
+    restart_server_log()
 
-    server_log("Account authentication and allocation database setup are complete.")
+    try:
+        cfg = startup()
+    except Exception:
+        error_msg = traceback.format_exc()
+        log_server(error_msg, end="")
+
+    try:
+        app = netauth.create_msal_app(cfg.get_msal_cid())
+    except Exception:
+        error_msg = traceback.format_exc()
+        log_server(error_msg, end="")
+
+    try:
+        alloc_utils.initialise_accounts(cfg, app)
+    except Exception:
+        error_msg = traceback.format_exc()
+        log_server(error_msg, end="")
+
+    log_server("Account authentication and allocation database setup are complete.")
 
     server_main(cfg, app)
 

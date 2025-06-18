@@ -5,7 +5,7 @@ import datetime
 from nydus.common.allocater import AllocEngine
 from nydus.common.Config import Config
 from nydus.common.SSHLogins import SSHLogins
-from nydus.server import log
+from nydus.server.log import log_server
 from nydus.common import netauth
 from nydus.common import validity
 
@@ -52,7 +52,7 @@ def initialise_accounts(cfg, app):
     for name in failed_aats:
         results_message += (name + "\n")
 
-    server_log(results_message)
+    log_server(results_message)
 
     # This is the one instance where no locking is required
     # before running the AllocEngine, because no threads
