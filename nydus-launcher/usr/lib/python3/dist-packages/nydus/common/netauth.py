@@ -4,6 +4,7 @@ import datetime
 import multiprocessing
 import pwd
 import os
+import time
 import traceback
 from msal import PublicClientApplication
 from msal import SerializableTokenCache
@@ -21,6 +22,8 @@ DBUS_VALUE = "unix:path=/run/user/{}/bus"
 CHUNK_SIZE = 1024
 SEND_DONE = "LASTCHUNKSENT"
 
+TOO_MANY_REQUESTS = 429
+MC_WAIT_DURATION = 60
 
 # Utilities for authenticating to endpoints over the internet;
 # Microsoft, Xbox, and Minecraft
@@ -262,9 +265,17 @@ def get_tok_minecraft(access_token):
         "identityToken": "XBL3.0 x={};{}".format(access_token.get_hash(), access_token.get_token())
     }
 
-    minecraft_resp = requests.post(MC_AUTH_URL,
-            json=minecraft_props, headers=AUTH_HEADERS)
-    mc_json = minecraft_resp.json()
+    while True:
+        minecraft_resp = requests.post(MC_AUTH_URL,
+                json=minecraft_props, headers=AUTH_HEADERS)
+        mc_json = minecraft_resp.json()
+
+        if minecraft_resp.status_code == TOO_MANY_REQUESTS:
+            # Getting a 429 means we've hit a rate limit and need to wait
+            print("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_AUTH_URL, MC_WAIT_DURATION))
+            time.sleep(MC_WAIT_DURATION)
+        else:
+            break
 
     if MC_TOKEN_KEY in mc_json:
         mc_access_tok = mc_json[MC_TOKEN_KEY]
@@ -301,9 +312,16 @@ def get_minecraft_details(access_token):
     profile_headers = AUTH_HEADERS.copy()
     profile_headers["Authorization"] = "Bearer {}".format(access_token.get_token())
 
-    profile_resp = requests.get(MC_PROFILE_URL, headers=profile_headers)
+    while True:
+        profile_resp = requests.get(MC_PROFILE_URL, headers=profile_headers)
+        profile_json = profile_resp.json()
 
-    profile_json = profile_resp.json()
+        if profile_resp.status_code == TOO_MANY_REQUESTS:
+            # Getting a 429 means we've hit a rate limit and need to wait
+            print("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_PROFILE_URL, MC_WAIT_DURATION))
+            time.sleep(MC_WAIT_DURATION)
+        else:
+            break
 
     mc_username = profile_json.get(MC_USERNAME_KEY)
 
