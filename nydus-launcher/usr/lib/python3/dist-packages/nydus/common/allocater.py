@@ -653,8 +653,8 @@ class AllocEngine:
             if acc.is_allocated() and acc.get_client_ip() == client_ip:
                 acc.release()
 
-                log_server("Released account {} which was allocated to IP {} and username {} because IP {} has requested a new account".format(\
-                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+                log_server("Released account {} which was allocated to IP {} because IP {} has requested a new account".format(\
+                        acc.get_ms_username(), client_ip, client_ip))
 
         for acc in self.accounts:
             if not acc.is_allocated():
@@ -685,8 +685,8 @@ class AllocEngine:
         self.write_changes()
 
         for acc in to_release:
-            log_server("Released account {} which was allocated to IP {} and username {}; release of account with uuid {} was requested".format(\
-                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
+            log_server("Released account {}; release of account with uuid {} was requested".format(\
+                    acc.get_ms_username(), uuid))
 
 
     """
@@ -705,8 +705,8 @@ class AllocEngine:
         self.write_changes()
 
         for acc in to_release:
-            log_server("Released account {} which was allocated to IP {} and username {}; release of accounts allocated to IP {} was requested".format(\
-                    acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+            log_server("Released account {}; release of accounts allocated to IP {} was requested".format(\
+                    acc.get_ms_username(), client_ip))
     
     """
     Finds an account (or all accounts if there are more than one) of a specific
@@ -793,7 +793,7 @@ class AllocEngine:
         for acc in self.accounts:
             if acc.alloc_expired():
                 acc.release()
-                log_server("Released account {} which was allocated to IP {} and username {}; allocation expired".format(\
-                        acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
+                log_server("Released account {}; allocation expired".format(\
+                        acc.get_ms_username()))
 
 
