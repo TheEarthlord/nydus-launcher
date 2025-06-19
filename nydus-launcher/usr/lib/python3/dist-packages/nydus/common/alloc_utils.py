@@ -194,13 +194,14 @@ def release_unused_accounts(cfg, alloc_engine):
 
     for acc in all_accounts:
 
-        client_username = acc.get_client_username()
-        client_ip = acc.get_client_ip()
+        if acc.is_allocated() and not acc.is_reserved():
+            client_username = acc.get_client_username()
+            client_ip = acc.get_client_ip()
 
-        # If the IP address to which the account was allocated
-        # no longer has the user to which the account was allocated
-        # logged in to that machine, then we can release the account
-        sessions = logins.get_specific_sessions(client_username, client_ip)
-        if len(sessions) == 0:
-            acc.release()
+            # If the IP address to which the account was allocated
+            # no longer has the user to which the account was allocated
+            # logged in to that machine, then we can release the account
+            sessions = logins.get_specific_sessions(client_username, client_ip)
+            if len(sessions) == 0:
+                acc.release()
 

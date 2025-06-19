@@ -442,7 +442,7 @@ class AllocAccount:
             raise TypeError("Object given is not an AccountAuthTokens class: {}".format(aat))
 
     def get_reserved_state(self):
-        if self.is_reserved:
+        if self.account_reserved:
             return RESERVED_TOKEN
         else:
             return ""
