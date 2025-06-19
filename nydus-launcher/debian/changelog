@@ -1,3 +1,12 @@
+nydus-launcher (1.4.2) jammy; urgency=medium
+
+  * Don't look at SSH logins when deciding whether to release accounts in
+    cleanup.
+  * Instead relying only on allocation timeout and the client release message
+    which is sent when Minecraft is closed.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Thu, 19 Jun 2025 13:26:25 +1000
+
 nydus-launcher (1.4.1) jammy; urgency=medium
 
   * Accounts can be reserved and unreserved through Nydus Cli
