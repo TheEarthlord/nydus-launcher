@@ -129,7 +129,18 @@ def cleanup_helper(cfg, app):
 
     renew_tokens(cfg, app, alloc_engine)
     alloc_engine.release_expired()
-    release_unused_accounts(cfg, alloc_engine)
+
+    # "Unused" accounts are detected by looking for users
+    # logged in over SSH. This is a very case-specific way
+    # of detecting whether an allocated account might still
+    # be in use, so we're going to leave it out of the cleanup
+    # process for now.
+    # The automatic account release upon close of Minecraft
+    # works quite well, and combined with the timeout and
+    # ability to manually release things with Nydus Cli,
+    # detecting unused allocations via SSH login seems like
+    # it doesn't add much.
+    #release_unused_accounts(cfg, alloc_engine)
 
 """
 Looks for access tokens in the alloc db which are close to expiring,
