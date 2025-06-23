@@ -519,7 +519,7 @@ def auth_all(username_list, app, cfg, interactive_allowed=True):
 
     assert isinstance(app, PublicClientApplication), "Must pass an MSAL PublicClientApplication to auth_all. Instead, a {} was passed.".format(type(app))
 
-    log_server("Beginning authentication of accounts")
+    log_server("Beginning authentication of {} accounts".format(len(username_list)))
 
     auth_results = {}
     

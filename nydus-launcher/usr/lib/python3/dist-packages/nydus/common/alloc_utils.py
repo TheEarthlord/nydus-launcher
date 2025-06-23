@@ -35,24 +35,7 @@ def initialise_accounts(cfg, app):
     if not isinstance(app, PublicClientApplication):
         raise TypeError("Must pass an MSAL PublicClientApplication to initialise_accounts. Got a {}".format(type(app)))
 
-    username_list = read_accounts_file(cfg.get_accounts_file())
-    auth_dict = netauth.auth_all(username_list, app, cfg, interactive_allowed=True)
-    authed_aats = [aat for aat in auth_dict.values() if aat != None]
-    failed_aats = [name for name in auth_dict if auth_dict[name] == None]
 
-    results_message = ""
-
-    if len(authed_aats) > 0:
-        results_message += "From {} requested Microsoft accounts, the following {} were authenticated.\n".format(len(username_list), len(authed_aats))
-    for aat in authed_aats:
-        results_message += (aat.get_microsoft_username() + "\n")
-
-    if len(failed_aats) > 0:
-        results_message += "From {} requested Microsoft accounts, the following {} failed authentication.\n".format(len(username_list), len(failed_aats))
-    for name in failed_aats:
-        results_message += (name + "\n")
-
-    log_server(results_message)
 
     # This is the one instance where no locking is required
     # before running the AllocEngine, because no threads
@@ -62,8 +45,33 @@ def initialise_accounts(cfg, app):
     # Create a whole new alloc db only if nothing is already
     # in the file.
     # Otherwise proceed with the file's contents.
-    if alloc_engine.num_total_accounts() == 0:
+    existing_accounts = alloc_engine.num_total_accounts()
+    if existing_accounts == 0:
+        log_server("Found no valid accounts in the allocation database. Authenticating those in {}".format(cfg.get_accounts_file()))
+
+        username_list = read_accounts_file(cfg.get_accounts_file())
+        auth_dict = netauth.auth_all(username_list, app, cfg, interactive_allowed=True)
+        authed_aats = [aat for aat in auth_dict.values() if aat != None]
+        failed_aats = [name for name in auth_dict if auth_dict[name] == None]
+
+        results_message = ""
+
+        if len(authed_aats) > 0:
+            results_message += "From {} requested Microsoft accounts, the following {} were authenticated.\n".format(len(username_list), len(authed_aats))
+        for aat in authed_aats:
+            results_message += (aat.get_microsoft_username() + "\n")
+
+        if len(failed_aats) > 0:
+            results_message += "From {} requested Microsoft accounts, the following {} failed authentication.\n".format(len(username_list), len(failed_aats))
+        for name in failed_aats:
+            results_message += (name + "\n")
+
+        log_server(results_message)
+
         alloc_engine.create_db(authed_aats)
+    else:
+        log_server("Found {} accounts in the allocation database. Proceeding with those.".format(existing_accounts))
+        log_server("If you want to use the accounts listed in {}, empty {}".format(cfg.get_accounts_file(), cfg.get_alloc_file()))
 
 
 """
