@@ -1,3 +1,10 @@
+nydus-launcher (1.4.3) jammy; urgency=medium
+
+  * Only authenticate accounts from ms-usernames on startup if nothing is in the
+    allocation database already.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Mon, 23 Jun 2025 17:07:16 +1000
+
 nydus-launcher (1.4.2) jammy; urgency=medium
 
   * Don't look at SSH logins when deciding whether to release accounts in
