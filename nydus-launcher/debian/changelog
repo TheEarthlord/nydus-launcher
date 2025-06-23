@@ -1,3 +1,10 @@
+nydus-launcher (1.4.4) jammy; urgency=medium
+
+  * Cleanup shouldn't hold the allocation database lock while waiting between
+    rate limits
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Mon, 23 Jun 2025 17:54:19 +1000
+
 nydus-launcher (1.4.3) jammy; urgency=medium
 
   * Only authenticate accounts from ms-usernames on startup if nothing is in the
