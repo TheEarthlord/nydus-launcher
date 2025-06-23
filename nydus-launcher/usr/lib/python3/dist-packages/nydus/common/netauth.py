@@ -1,18 +1,17 @@
 
-import requests
 import datetime
 import multiprocessing
-import pwd
 import os
+import pwd
+import requests
 import time
 import traceback
 from msal import PublicClientApplication
 from msal import SerializableTokenCache
-from nydus.common.MCAccount import MCAccount
 from nydus.common import validity
 from nydus.common.AccessToken import AccessToken
-from nydus.common.MCAccount import MCAccount
 from nydus.common.AccountAuthTokens import AccountAuthTokens
+from nydus.common.MCAccount import MCAccount
 from nydus.server.log import log_server
 
 # Data for the subprocess that does
@@ -253,9 +252,14 @@ def get_tok_xsts(access_token):
 """
 access_token: an AccessToken object obtained through auth to XSTS. The caller
     needs to make sure it's valid and unexpired.
+block_wait: boolean. If True, and authentication attempt returns a rate limit error,
+    the function will wait and try again later. If False and authentication returns
+    a rate limit error, the function will return None. This allows the allocation
+    database lock to be released while waiting until it's time to try again.
+    Default is True.
 Returns an AccessToken object containing a token and expiry time for Minecraft.
 """
-def get_tok_minecraft(access_token):
+def get_tok_minecraft(access_token, block_wait=True):
     if not isinstance(access_token, AccessToken):
         raise ValueError("An AccessToken class must be provided to get_tok_minecraft. Instead, was given a {}".format(type(access_token)))
 
@@ -273,6 +277,9 @@ def get_tok_minecraft(access_token):
 
         if minecraft_resp.status_code == TOO_MANY_REQUESTS:
             # Getting a 429 means we've hit a rate limit and need to wait
+            if not block_wait:
+                return None
+
             log_server("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_AUTH_URL, MC_WAIT_DURATION))
             time.sleep(MC_WAIT_DURATION)
         else:
@@ -300,10 +307,15 @@ def get_tok_minecraft(access_token):
 """
 access_token: an AccessToken object containing a token obtained
 through auth to Minecraft.
+block_wait: boolean. If True, and the api access attempt returns a rate limit error,
+    the function will wait and try again later. If False and the api returns
+    a rate limit error, the function will return None. This allows the allocation
+    database lock to be released while waiting until it's time to try again.
+    Default is True.
 This function returns an MCAccount containing the username, uuid,
 and token from access_token. These are needed for Minecraft launch.
 """
-def get_minecraft_details(access_token):
+def get_minecraft_details(access_token, block_wait=True):
     if not isinstance(access_token, AccessToken):
         raise ValueError("An AccessToken class must be provided to get_minecraft_details. Instead, was given a {}".format(type(access_token)))
 
@@ -318,6 +330,10 @@ def get_minecraft_details(access_token):
         profile_json = profile_resp.json()
 
         if profile_resp.status_code == TOO_MANY_REQUESTS:
+
+            if not block_wait:
+                return None
+
             # Getting a 429 means we've hit a rate limit and need to wait
             log_server("Hit rate limit on {}; waiting {} seconds before proceeding".format(MC_PROFILE_URL, MC_WAIT_DURATION))
             time.sleep(MC_WAIT_DURATION)

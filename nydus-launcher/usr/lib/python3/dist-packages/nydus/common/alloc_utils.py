@@ -1,13 +1,15 @@
 
-from msal import PublicClientApplication
-import threading
 import datetime
-from nydus.common.allocater import AllocEngine
-from nydus.common.Config import Config
-from nydus.common.SSHLogins import SSHLogins
-from nydus.server.log import log_server
+import threading
+import time
+from msal import PublicClientApplication
 from nydus.common import netauth
 from nydus.common import validity
+from nydus.common.allocater import AllocEngine
+from nydus.common.Config import Config
+from nydus.common.netauth import MC_WAIT_DURATION
+from nydus.common.SSHLogins import SSHLogins
+from nydus.server.log import log_server
 
 # Tools used by both Nydus Server and Nydus Cli
 # in the process of interacting with Allocations
@@ -107,6 +109,8 @@ the relevant Minecraft account is released.
 """
 def cleanup(cfg, app, thread_lock=None):
 
+    log_server("Beginning cleanup of allocation database")
+
     if not isinstance(cfg, Config):
         raise TypeError("Must pass a Nydus Config instance to initialise_accounts. Got a {}".format(type(cfg)))
 
@@ -116,26 +120,35 @@ def cleanup(cfg, app, thread_lock=None):
     if thread_lock != None and not isinstance(thread_lock, type(threading.Lock())):
         raise TypeError("Must pass a threading.Lock or None to function cleanup. Got a {}".format(type(thread_lock)))
 
-    # TODO
-    # Does this lock up the allocations for too long?
-    # Do we need to split this into multiple
-    # separate operations with separate claim/release
-    # on the lock?
 
-    if thread_lock:
-        with thread_lock:
-            cleanup_helper(cfg, app)
-    else:
-        cleanup_helper(cfg, app)
+    while True:
+        renewal_succeeded = True
+        if thread_lock:
+            with thread_lock:
+                renewal_succeeded = cleanup_helper(cfg, app)
+        else:
+            renewal_succeeded = cleanup_helper(cfg, app)
+
+        if renewal_succeeded:
+            break
+        else:
+            log_server("Hit rate limit during cleanup. Waiting {} seconds before trying again.".format(MC_WAIT_DURATION))
+            time.sleep(MC_WAIT_DURATION)
+
+    log_server("Finished cleanup of allocation database")
+
 
 """
 Only intended to be called from inside cleanup
 Used to simplify the code on whether to use a lock or not.
+Returns boolean. If True, all cleanup was successful.
+If False, an api gave a rate limit error and the cleanup
+will need to be rerun after a short wait.
 """
 def cleanup_helper(cfg, app):
     alloc_engine = AllocEngine(cfg.get_alloc_file())
 
-    renew_tokens(cfg, app, alloc_engine)
+    renewal_succeeded = renew_tokens(cfg, app, alloc_engine)
     alloc_engine.release_expired()
 
     # "Unused" accounts are detected by looking for users
@@ -150,12 +163,19 @@ def cleanup_helper(cfg, app):
     # it doesn't add much.
     #release_unused_accounts(cfg, alloc_engine)
 
+    alloc_engine.write_changes()
+    return renewal_succeeded
+
 """
 Looks for access tokens in the alloc db which are close to expiring,
 and renews them.
+Returns boolean. If True, all token renewal was successful.
+If False, some token renewal hit a rate limit error, and needs to
+be retried in 60 seconds.
 """
 def renew_tokens(cfg, app, alloc_engine):
     all_accounts = alloc_engine.get_accounts()
+    all_succeeded = True
     for acc in all_accounts:
 
         # We try/except everything here because if one
@@ -189,17 +209,21 @@ def renew_tokens(cfg, app, alloc_engine):
         if acc.minecraft_needs_renewal(CLEANUP_DT):
             xsts_tok = acc.get_xsts_at()
             try:
-                minecraft_tok = netauth.get_tok_minecraft(xsts_tok)
-                acc.update_minecraft_token(minecraft_tok)
+                minecraft_tok = netauth.get_tok_minecraft(xsts_tok, block_wait=False)
+                if minecraft_tok == None:
+                    all_succeeded = False
+                else:
+                    acc.update_minecraft_token(minecraft_tok)
 
-                # The minecraft access token is also in MCAccount
-                # so we need to update that too
-                mc_username = acc.get_mc_username()
-                mc_uuid = acc.get_mc_uuid()
-                mc_acc = MCAccount(mc_username, mc_uuid, minecraft_tok.get_token())
-                acc.update_minecraft_account(mc_acc)
+                    # The minecraft access token is also in MCAccount
+                    # so we need to update that too
+                    mc_username = acc.get_mc_username()
+                    mc_uuid = acc.get_mc_uuid()
+                    mc_acc = MCAccount(mc_username, mc_uuid, minecraft_tok.get_token())
+                    acc.update_minecraft_account(mc_acc)
             except Exception:
                 pass
+    return all_succeeded
 
 
 """
