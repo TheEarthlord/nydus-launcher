@@ -56,7 +56,7 @@ class AccessToken:
         if self.is_expired():
             return True
 
-        if datetime.datetime.now() + (2 * check_interval)  > self.get_expiry():
+        if datetime.datetime.now() + (num_intervals * check_interval)  > self.get_expiry():
             return True
 
         return False
