@@ -2,6 +2,7 @@
 import datetime
 import threading
 import time
+import traceback
 from msal import PublicClientApplication
 from nydus.common import netauth
 from nydus.common import validity
@@ -178,40 +179,53 @@ def renew_tokens(cfg, app, alloc_engine):
     all_succeeded = True
     for acc in all_accounts:
 
+        ms_username = acc.get_ms_username()
+
         # We try/except everything here because if one
         # authentication fails we still want to try renewing
         # everything else
 
         if acc.msal_needs_renewal(CLEANUP_DT):
+            log_server("Msal token for {} needs renewal".format(ms_username))
             ms_username = acc.get_ms_username()
             try:
                 msal_tok = netauth.get_tok_msal(ms_username, app, interactive_allowed=False)
                 acc.update_msal_token(msal_tok)
+                log_server("Msal token for {} successfully renewed".format(ms_username))
             except Exception:
-                pass
+                error_msg = traceback.format_exc()
+                log_server("Msal token renewal for {} failed with error: {}".format(ms_username, error_msg))
 
         if acc.xboxlive_needs_renewal(CLEANUP_DT):
+            log_server("Xboxlive token for {} needs renewal".format(ms_username))
             msal_tok = acc.get_msal_at()
             try:
                 xboxlive_tok = netauth.get_tok_xboxlive(msal_tok)
                 acc.update_xboxlive_token(xboxlive_tok)
+                log_server("Xboxlive token for {} successfully renewed".format(ms_username))
             except Exception:
-                pass
+                error_msg = traceback.format_exc()
+                log_server("Xboxlive token renewal for {} failed with error: {}".format(ms_username, error_msg))
 
         if acc.xsts_needs_renewal(CLEANUP_DT):
+            log_server("XSTS token for {} needs renewal".format(ms_username))
             xboxlive_tok = acc.get_xboxlive_at()
             try:
                 xsts_tok = netauth.get_tok_xsts(xboxlive_tok)
                 acc.update_xsts_token(xsts_tok)
+                log_server("XSTS token for {} successfully renewed".format(ms_username))
             except Exception:
-                pass
+                error_msg = traceback.format_exc()
+                log_server("XSTS token renewal for {} failed with error: {}".format(ms_username, error_msg))
 
         if acc.minecraft_needs_renewal(CLEANUP_DT):
+            log_server("Minecraft token for {} needs renewal".format(ms_username))
             xsts_tok = acc.get_xsts_at()
             try:
                 minecraft_tok = netauth.get_tok_minecraft(xsts_tok, block_wait=False)
                 if minecraft_tok == None:
                     all_succeeded = False
+                    log_server("Minecraft token renewal for {} failed due to rate limit; scheduling retry in 60 seconds".format(ms_username))
                 else:
                     acc.update_minecraft_token(minecraft_tok)
 
@@ -221,8 +235,10 @@ def renew_tokens(cfg, app, alloc_engine):
                     mc_uuid = acc.get_mc_uuid()
                     mc_acc = MCAccount(mc_username, mc_uuid, minecraft_tok.get_token())
                     acc.update_minecraft_account(mc_acc)
+                    log_server("Minecraft token for {} successfully renewed".format(ms_username))
             except Exception:
-                pass
+                error_msg = traceback.format_exc()
+                log_server("Minecraft token renewal for {} failed with error: {}".format(ms_username, error_msg))
     return all_succeeded
 
 
