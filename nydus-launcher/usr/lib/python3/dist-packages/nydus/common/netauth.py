@@ -354,7 +354,7 @@ def get_minecraft_details(access_token, block_wait=True):
 
 """
 queue: a multiprocessing.Queue shared with the master process that spawned us
-usernames: a list of strings; Microsoft account usernames to authenticate
+username_list: a list of strings; Microsoft account usernames to authenticate
 app: an MSALPublicClientApplication which will be used to authenticate
     the Microsoft account
 browser_uid: integer, uid of an account on the local system which
@@ -436,11 +436,6 @@ def msal_interactive_auth(username_list, app, cfg):
 """
 username: string, a Microsoft account username (email address)
 app: an MSAL PublicClientApplication which will be used to authenticate the Microsoft account
-cfg: a nydus ServerConfig or CliConfig instance
-interactive_allowed: boolean. If True, this function may trigger a browser window to
-    be opened so the Microsoft account can be authenticated manually. If False,
-    this won't be done, but in that case the token can only be successfully obtained
-    if MSAL already has the account authenticated.
 This function acquires an MSAL token used for later authentication to Xbox and Minecraft.
 It returns an AccessToken object containing that token.
 """
@@ -488,11 +483,6 @@ def get_tok_msal(username, app):
 """
 username: string, a Microsoft account username (email address)
 app: an MSAL PublicClientApplication which will be used to authenticate the Microsoft account
-cfg: a nydus ServerConfig or CliConfig instance
-interactive_allowed: boolean. If True, this function may trigger a browser window to
-    be opened so the Microsoft account can be authenticated manually. If False,
-    this won't be done, but in that case the token can only be successfully obtained
-    if MSAL already has the account authenticated.
 Performs the whole authentication stream for Minecraft, beginning with the Microsoft
 username and MSAL client given, proceeding through tokens for MSAL, Xbox Live, XSTS,
 and Minecraft.

@@ -189,7 +189,7 @@ def renew_tokens(cfg, app, alloc_engine):
             log_server("Msal token for {} needs renewal".format(ms_username))
             ms_username = acc.get_ms_username()
             try:
-                msal_tok = netauth.get_tok_msal(ms_username, app, interactive_allowed=False)
+                msal_tok = netauth.get_tok_msal(ms_username, app)
                 acc.update_msal_token(msal_tok)
                 log_server("Msal token for {} successfully renewed".format(ms_username))
             except Exception:
