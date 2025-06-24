@@ -8,6 +8,7 @@ from nydus.common import netauth
 from nydus.common import validity
 from nydus.common.allocater import AllocEngine
 from nydus.common.Config import Config
+from nydus.common.MCAccount import MCAccount
 from nydus.common.netauth import MC_WAIT_DURATION
 from nydus.common.SSHLogins import SSHLogins
 from nydus.server.log import log_server
