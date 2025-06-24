@@ -1,3 +1,11 @@
+nydus-launcher (1.4.5) jammy; urgency=medium
+
+  * Added command to Nydus Cli to view UUIDs
+  * Added log messages to describe token renewal during cleanup
+  * Corrected some errors in token renewal code
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 24 Jun 2025 14:09:02 +1000
+
 nydus-launcher (1.4.4) jammy; urgency=medium
 
   * Cleanup shouldn't hold the allocation database lock while waiting between
