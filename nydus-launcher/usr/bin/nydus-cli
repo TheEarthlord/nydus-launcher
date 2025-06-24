@@ -20,6 +20,7 @@ RELEASE_UUID = "release-uuid"
 RELEASE_IP = "release-ip"
 RESERVE_UUID = "reserve-uuid"
 UNRESERVE_UUID = "unreserve-uuid"
+UUID_SHOW = "uuid-show"
 CLEANUP = "cleanup"
 HELP = "help"
 CREATE = "create"
@@ -36,6 +37,7 @@ COMMANDS = [
     RELEASE_IP,
     RESERVE_UUID,
     UNRESERVE_UUID,
+    UUID_SHOW,
     CLEANUP,
     CREATE,
     HELP,
@@ -45,6 +47,7 @@ SIMPLE_COMMANDS = [
     SUMMARY,
     VIEW,
     CREATE,
+    UUID_SHOW,
     CLEANUP,
     HELP,
 ]
@@ -206,6 +209,8 @@ def cli_main(cfg):
         allocengine.reserve_uuid(data)
     elif command == UNRESERVE_UUID:
         allocengine.unreserve_uuid(data)
+    elif command == UUID_SHOW:
+        print(allocengine.uuid_show())
     elif command == CREATE:
         app = netauth.create_msal_app(cfg.get_msal_cid())
         alloc_utils.initialise_accounts(cfg, app)

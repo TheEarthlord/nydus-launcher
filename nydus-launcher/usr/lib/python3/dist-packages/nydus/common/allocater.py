@@ -112,6 +112,12 @@ SUMMARY_PADDINGS = [
     33,
 ]
 
+UUID_PADDINGS = [
+    33,
+    33,
+    32,
+]
+
 assert len(SUMMARY_FIELDS) == len(SUMMARY_PADDINGS),\
     "Must have exactly one padding size for each summary field. Had {} paddings and {} fields".format(
         len(SUMMARY_PADDINGS), len(SUMMARY_FIELDS))
@@ -235,8 +241,26 @@ class AllocAccount:
         return outstr
 
     """
+    Creates the header line to go in the top of the uuid-show view
+    Does not include a newline on the end
+    """
+    def make_uuid_header():
+        fields = ["ms-username", "mc-username", "uuid"]
+        assert len(fields) == len(UUID_PADDINGS), "make_uuid_header is misconfigured"
+
+        header_blocks = []
+        for i in range(len(fields)):
+            field = fields[i]
+            padding = UUID_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(field)
+            header_blocks.append(block)
+        outstr = SUMMARY_DELIM.join(header_blocks)
+        return outstr
+
+    """
     Creates a line of summary data, for easy viewing.
-    Includes on allocation client IP, allocation client username, allocation time,
+    Includes reservation status, allocation client IP, allocation client username, allocation time,
     minecraft username, and microsoft username.
     It's spaced for easy reading.
     Does NOT include a newline on the end.
@@ -262,6 +286,31 @@ class AllocAccount:
             if isinstance(value, datetime.datetime):
                 value = value.strftime(TIME_FORMAT)
             padding = SUMMARY_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(value)
+            summary_blocks.append(block)
+
+        outstr = SUMMARY_DELIM.join(summary_blocks)
+        return outstr
+
+    """
+    Creates a line of summary data to show account uuid
+    Includes Minecraft username, Microsoft username, uuid
+    It's spaced for easy reading.
+    Does NOT include a newline on the end.
+    """
+    def uuid_show(self):
+        summary_blocks = []
+            
+        fields = [
+            self.get_ms_username(),
+            self.get_mc_username(),
+            self.get_mc_uuid(),
+        ]
+
+        for i in range(len(fields)):
+            value = fields[i]
+            padding = UUID_PADDINGS[i]
             formstr = " {:" + str(padding) + "} "
             block = formstr.format(value)
             summary_blocks.append(block)
@@ -643,6 +692,18 @@ class AllocEngine:
 
         to_view = [acc for acc in self.accounts if acc.get_client_ip() == client_ip]
         return AllocEngine.list_to_string(to_view)
+    
+    """
+    Returns a string containing a summary form of the allocation database
+    that shows only Microsoft username, Minecraft username, and Minecraft uuid.
+    The string will include every account in the attached AllocEngine.
+    """
+    def uuid_show(self):
+        outstr = ""
+        outstr += "{}\n".format(AllocAccount.make_uuid_header())
+        for acc in self.accounts:
+            outstr += "{}\n".format(acc.uuid_show())
+        return outstr
     
     """
     Returns a summary string (like that given by list_to_summary)
