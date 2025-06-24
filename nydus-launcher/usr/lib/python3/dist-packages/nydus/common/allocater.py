@@ -389,9 +389,15 @@ class AllocAccount:
     def minecraft_expired(self):
         return self.aat.get_minecraft_token().is_expired()
 
-    def msal_needs_renewal(self, check_interval, num_intervals=2):
+    # We default msal's renewal window to only one cleanup period,
+    # not 2 like the other tokens types, because msal tokens are
+    # only valid for an hour and the cleanup period is half an
+    # hour so two periods would renew the token every cleanup.
+    def msal_needs_renewal(self, check_interval, num_intervals=1):
         return self.aat.get_msal_token().needs_renewal(check_interval, num_intervals)
 
+    # Xbox and Minecraft tokens usually expire a day after issue,
+    # so 2*cleanup_period = 1 hour is plenty of warning.
     def xboxlive_needs_renewal(self, check_interval, num_intervals=2):
         return self.aat.get_xboxlive_token().needs_renewal(check_interval, num_intervals)
 
