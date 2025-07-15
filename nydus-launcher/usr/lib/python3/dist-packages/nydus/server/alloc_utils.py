@@ -10,7 +10,6 @@ from nydus.common.MCAccount import MCAccount
 from nydus.server import netauth
 from nydus.server.allocater import AllocEngine
 from nydus.server.netauth import MC_WAIT_DURATION
-from nydus.server.SSHLogins import SSHLogins
 from nydus.server.log import log_server
 
 # Tools used by both Nydus Server and Nydus Cli
@@ -163,7 +162,6 @@ def cleanup_helper(cfg, app):
     # ability to manually release things with Nydus Cli,
     # detecting unused allocations via SSH login seems like
     # it doesn't add much.
-    #release_unused_accounts(cfg, alloc_engine)
 
     alloc_engine.write_changes()
     return renewal_succeeded
@@ -241,27 +239,3 @@ def renew_tokens(cfg, app, alloc_engine):
                 error_msg = traceback.format_exc()
                 log_server("Minecraft token renewal for {} failed with error: {}".format(ms_username, error_msg))
     return all_succeeded
-
-
-"""
-Looks for accounts which are allocated to IP addresses/system users
-which aren't in use right now (therefore the Minecraft account
-can't be in use) and releases them.
-"""
-def release_unused_accounts(cfg, alloc_engine):
-    logins = SSHLogins()
-    all_accounts = alloc_engine.get_accounts()
-
-    for acc in all_accounts:
-
-        if acc.is_allocated() and not acc.is_reserved():
-            client_username = acc.get_client_username()
-            client_ip = acc.get_client_ip()
-
-            # If the IP address to which the account was allocated
-            # no longer has the user to which the account was allocated
-            # logged in to that machine, then we can release the account
-            sessions = logins.get_specific_sessions(client_username, client_ip)
-            if len(sessions) == 0:
-                acc.release()
-
