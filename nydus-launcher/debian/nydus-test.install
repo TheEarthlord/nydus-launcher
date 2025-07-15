@@ -1,6 +1,6 @@
 usr/bin/nydus-test
 usr/lib/python3/dist-packages/nydus/test/client/utils.py
 usr/lib/python3/dist-packages/nydus/test/common/validity.py
-usr/lib/python3/dist-packages/nydus/test/common/alloc.py
-usr/lib/python3/dist-packages/nydus/test/common/netauth.py
+usr/lib/python3/dist-packages/nydus/test/server/alloc.py
+usr/lib/python3/dist-packages/nydus/test/server/netauth.py
 usr/share/man/man1/nydus-test.1

@@ -38,22 +38,21 @@ Description: Command-line interface for Nydus Launcher
  from a central server over the network. This means instances of Minecraft
  can be launched without the players knowing the credentials of the
  Minecraft account they are using.
- This package contains the Nydus cli, a program which the administrator
+ This package contains the Nydus Cli, a program which the administrator
  can use to manually modify the Nydus server's account allocation state
  with a selection of commands.
 
 Package: nydus-common
 Architecture: any
 Depends: python3
-Description: Server for Nydus Launcher
+Description: Utilities for Nydus Launcher
  The Nydus Launcher is a custom distributed Minecraft launcher
  which allows clients to launch Minecraft using access tokens obtained
  from a central server over the network. This means instances of Minecraft
  can be launched without the players knowing the credentials of the
  Minecraft account they are using.
- This package contains the Nydus client, the program which requests
- access tokens from the server, downloads needed files, and launches
- Minecraft. 
+ This package contains several items which are needed by all elements
+ of the Nydus Launcher; Server, Client, and Cli.
 
 Package: nydus-test
 Architecture: any

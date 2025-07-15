@@ -1,9 +1,3 @@
-usr/lib/python3/dist-packages/nydus/common/AccessToken.py
-usr/lib/python3/dist-packages/nydus/common/AccountAuthTokens.py
-usr/lib/python3/dist-packages/nydus/common/allocater.py
-usr/lib/python3/dist-packages/nydus/common/alloc_utils.py
 usr/lib/python3/dist-packages/nydus/common/Config.py
 usr/lib/python3/dist-packages/nydus/common/MCAccount.py
-usr/lib/python3/dist-packages/nydus/common/netauth.py
-usr/lib/python3/dist-packages/nydus/common/SSHLogins.py
 usr/lib/python3/dist-packages/nydus/common/validity.py
