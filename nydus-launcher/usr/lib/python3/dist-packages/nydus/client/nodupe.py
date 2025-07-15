@@ -6,11 +6,12 @@
 
 import os
 from nydus.client import utils
+from nydus.common import validity
 
 def get_runfile_path():
     sys_username = utils.get_username()
     runfile_name = "{}-nydus-client.pid".format(sys_username)
-    return os.path.join("/etc", "nydus", runfile_name)
+    return os.path.join("/tmp", runfile_name)
 
 def runfile_exists():
     return os.path.isfile(get_runfile_path())
@@ -31,7 +32,7 @@ def nydus_client_running():
 
     if runfile_exists():
         contents = get_runfile_contents()
-        if is_positive_integer(contents):
+        if validity.is_positive_integer(contents):
             return True
     return False
 
@@ -55,7 +56,7 @@ def delete_runfile():
     if runfile_exists():
         rfname = get_runfile_path()
         contents = get_runfile_contents()
-        if is_positive_integer(contents):
+        if validity.is_positive_integer(contents):
             filepid = int(contents)
             mypid = os.getpid()
             if filepid != mypid:

@@ -260,7 +260,7 @@ def begin_runfile():
     if nodupe.nydus_client_running():
         exit(0)
 
-    make_runfile()
+    nodupe.make_runfile()
 
 """
 To be run at the end of the program, after Minecraft is finished.
