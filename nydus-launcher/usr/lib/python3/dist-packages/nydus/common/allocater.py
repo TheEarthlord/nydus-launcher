@@ -825,9 +825,12 @@ class AllocEngine:
         if not validity.is_valid_system_username(client_username):
             raise ValueError("Client username was not a valid system username: {}".format(client_username))
 
-        to_release = [acc for acc in self.accounts \
-                if acc.is_allocated() and acc.get_client_ip() == client_ip\
-                and acc.get_client_username() == client_username]
+        to_release = []
+        for acc in self.accounts:
+            if acc.is_allocated():
+                if acc.get_client_ip() == client_ip:
+                    if acc.get_client_username() == client_username:
+                        to_release.append(acc)
 
         for acc in to_release:
             result = acc.release()
