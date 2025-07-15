@@ -75,14 +75,14 @@ def allocate_account(cfg, conn, addr, sys_username):
     while sent_data < len(allocation_data):
         sent_data += conn.send(allocation_data[sent_data:])
 
-def release_account(cfg, conn, addr):
+def release_account(cfg, conn, addr, sys_username):
     # Release the account on that address
 
     client_ip = addr[0]
 
     with ALLOCDB_LOCK:
         alloc_engine = AllocEngine(cfg.get_alloc_file())
-        alloc_engine.release_account_ip(client_ip)
+        alloc_engine.release_account(client_ip, sys_username)
 
 def handle_connection(cfg, conn, addr):
     try:
@@ -138,9 +138,13 @@ def client_exchange(cfg, conn, addr):
             elif validity.is_valid_system_username(sys_username.strip()):
                 allocate_account(cfg, conn, addr, sys_username.strip())
 
-        elif str_data.startswith(RELEASE_COMMAND):
+        elif str_data.startswith(RELEASE_COMMAND + " "):
+            sys_username = str_data[len(RELEASE_COMMAND) + 1:]
             
-            release_account(cfg, conn, addr)
+            if validity.is_valid_system_username(sys_username):
+                release_account(cfg, conn, addr, sys_username)
+            elif validity.is_valid_system_username(sys_username.strip()):
+                release_account(cfg, conn, addr, sys_username.strip())
 
         else:
             log_server("Invalid connection from host {}".format(addr))

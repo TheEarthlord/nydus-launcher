@@ -793,7 +793,7 @@ class AllocEngine:
 
         # Release everything currently allocated to this client
         for acc in self.accounts:
-            if acc.is_allocated() and acc.get_client_ip() == client_ip:
+            if acc.is_allocated() and acc.get_client_ip() == client_ip and acc.get_client_username() == client_username:
                 
                 result = acc.release()
                 
@@ -813,6 +813,29 @@ class AllocEngine:
 
                     return acc
         return None
+
+    """
+    Finds all accounts allocated to both the given client IP
+    and the given username, and releases them.
+    """
+    def release_account(self, client_ip, client_username):
+        if not validity.is_valid_ipaddr(client_ip):
+            raise ValueError("Not a valid IP address: {}".format(client_ip))
+
+        if not validity.is_valid_system_username(client_username):
+            raise ValueError("Client username was not a valid system username: {}".format(client_username))
+
+        to_release = [acc for acc in self.accounts \
+                if acc.is_allocated() and acc.get_client_ip() == client_ip\
+                and acc.get_client_username() == client_username]
+
+        for acc in to_release:
+            result = acc.release()
+            if result:
+                log_server("Released account {}; release of accounts allocated to IP {} and username {} was requested".format(\
+                        acc.get_ms_username(), client_ip, client_username))
+
+        self.write_changes()
 
     """
     Finds account by uuid

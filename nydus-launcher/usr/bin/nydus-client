@@ -154,7 +154,8 @@ account we were allocated.
 """
 def release(ssock):
 
-    request_str = "{}\n".format(RELEASE_COMMAND)
+    sys_username = utils.get_username()
+    request_str = "{} {}\n".format(RELEASE_COMMAND, sys_username)
     request_data = request_str.encode(encoding=NETENC)
     
     total_sent = 0
