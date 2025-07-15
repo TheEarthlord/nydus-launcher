@@ -2,12 +2,12 @@ etc/nydus/nydus-server.conf
 etc/nydus/nydus-alloc.csv
 etc/nydus/ms-usernames.txt
 usr/bin/nydus-server
-usr/lib/python3/dist-packages/nydus/common/AccessToken.py
-usr/lib/python3/dist-packages/nydus/common/AccountAuthTokens.py
-usr/lib/python3/dist-packages/nydus/common/allocater.py
-usr/lib/python3/dist-packages/nydus/common/alloc_utils.py
+usr/lib/python3/dist-packages/nydus/server/AccessToken.py
+usr/lib/python3/dist-packages/nydus/server/AccountAuthTokens.py
+usr/lib/python3/dist-packages/nydus/server/allocater.py
+usr/lib/python3/dist-packages/nydus/server/alloc_utils.py
 usr/lib/python3/dist-packages/nydus/server/log.py
-usr/lib/python3/dist-packages/nydus/common/netauth.py
+usr/lib/python3/dist-packages/nydus/server/netauth.py
 usr/lib/python3/dist-packages/nydus/server/ServerConfig.py
 usr/lib/systemd/system/nydus-server.service
 usr/share/man/man1/nydus-server.1

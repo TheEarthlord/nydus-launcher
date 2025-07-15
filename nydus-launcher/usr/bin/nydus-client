@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk
 import traceback
 
+from nydus.client import nodupe
 from nydus.client import utils
 from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
@@ -246,7 +247,31 @@ def request(ssock):
     # in case.
     close_status_window()
 
+"""
+To be run at the beginning of the program, before the server is
+contacted. Checks for a runfile, an indicator that a Nydus Client
+instance is already running for this user on this machine, and if
+one is present, exits immediately to avoid duplicate Minecraft
+instances.
+WARNING: This function will exit the whole program if the right conditions
+are met, without presenting an error message for the user.
+"""
+def begin_runfile():
+    if nodupe.nydus_client_running():
+        exit(0)
+
+    make_runfile()
+
+"""
+To be run at the end of the program, after Minecraft is finished.
+Deletes the runfile.
+"""
+def end_runfile():
+    nodupe.delete_runfile()
+
 def client_main(cfg):
+
+    begin_runfile()
 
     context = ssl.create_default_context()
 
@@ -272,6 +297,7 @@ def client_main(cfg):
            
             release(ssock)
 
+    end_runfile()
 
 
 def startup():
