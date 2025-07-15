@@ -1,3 +1,12 @@
+nydus-launcher (2.1.0) jammy; urgency=medium
+
+  * Made Nydus Client resistant to opening two instances on the same machine
+    for the same user, to reduce the chance of a user wiping their own
+    allocation with a Minecraft instance still open. Users could still work
+    around this by manually deleting the pidfile though.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 15 Jul 2025 20:39:56 +1000
+
 nydus-launcher (2.0.0) jammy; urgency=medium
 
   * Nydus Launcher has been successfully deployed and works well, though some
