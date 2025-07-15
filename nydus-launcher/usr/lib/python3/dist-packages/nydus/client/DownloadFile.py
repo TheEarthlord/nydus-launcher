@@ -1,9 +1,9 @@
 
-from nydus.client import utils
-import os
-import requests
 import hashlib
 import hmac
+import os
+import requests
+from nydus.client import utils
 
 """
 Class theory

@@ -4,13 +4,13 @@ import threading
 import time
 import traceback
 from msal import PublicClientApplication
-from nydus.common import netauth
 from nydus.common import validity
-from nydus.common.allocater import AllocEngine
 from nydus.common.Config import Config
 from nydus.common.MCAccount import MCAccount
-from nydus.common.netauth import MC_WAIT_DURATION
-from nydus.common.SSHLogins import SSHLogins
+from nydus.server import netauth
+from nydus.server.allocater import AllocEngine
+from nydus.server.netauth import MC_WAIT_DURATION
+from nydus.server.SSHLogins import SSHLogins
 from nydus.server.log import log_server
 
 # Tools used by both Nydus Server and Nydus Cli

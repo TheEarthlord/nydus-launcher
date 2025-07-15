@@ -9,9 +9,9 @@ import traceback
 from msal import PublicClientApplication
 from msal import SerializableTokenCache
 from nydus.common import validity
-from nydus.common.AccessToken import AccessToken
-from nydus.common.AccountAuthTokens import AccountAuthTokens
 from nydus.common.MCAccount import MCAccount
+from nydus.server.AccessToken import AccessToken
+from nydus.server.AccountAuthTokens import AccountAuthTokens
 from nydus.server.log import log_server
 
 # Data for the subprocess that does

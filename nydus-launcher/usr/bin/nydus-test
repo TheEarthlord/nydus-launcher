@@ -2,8 +2,8 @@
 
 from nydus.test.client.utils import *
 from nydus.test.common.validity import *
-from nydus.test.common.alloc import *
-from nydus.test.common.netauth import *
+from nydus.test.server.alloc import *
+from nydus.test.server.netauth import *
 
 def main():
     unittest.main()

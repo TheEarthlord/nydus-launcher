@@ -3,8 +3,8 @@
 import unittest
 import os
 
-from nydus.common.alloc_utils import *
-from nydus.common.allocater import *
+from nydus.server.alloc_utils import *
+from nydus.server.allocater import *
 
 class TestView(unittest.TestCase):
 

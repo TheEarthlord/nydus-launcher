@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
 import sys
-from nydus.common import validity
-from nydus.common.allocater import AllocEngine
 from nydus.cli.CliConfig import CliConfig
-from nydus.common import netauth
-from nydus.common import alloc_utils
+from nydus.common import validity
+from nydus.server.allocater import AllocEngine
+from nydus.server import alloc_utils
+from nydus.server import netauth
 
 PROGNAME = "nydus-cli"
 

@@ -1,5 +1,5 @@
-from nydus.common import validity
 
+from nydus.common import validity
 
 class MCAccount:
 

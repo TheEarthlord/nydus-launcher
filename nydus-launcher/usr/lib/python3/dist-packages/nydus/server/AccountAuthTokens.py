@@ -1,6 +1,6 @@
 
 from nydus.common import validity
-from nydus.common.AccessToken import AccessToken
+from nydus.server.AccessToken import AccessToken
 from nydus.common.MCAccount import MCAccount
 
 # Authenticating an account and preparing it for Minecraft

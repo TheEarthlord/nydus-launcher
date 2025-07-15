@@ -4,9 +4,9 @@ import datetime
 import os
 from nydus.common.validity import TIME_FORMAT
 from nydus.common.MCAccount import MCAccount
-from nydus.common.AccessToken import AccessToken
-from nydus.common.AccountAuthTokens import AccountAuthTokens
 from nydus.common import validity
+from nydus.server.AccessToken import AccessToken
+from nydus.server.AccountAuthTokens import AccountAuthTokens
 from nydus.server.log import log_server
 
 # Decides which account to give to a client requesting an account.

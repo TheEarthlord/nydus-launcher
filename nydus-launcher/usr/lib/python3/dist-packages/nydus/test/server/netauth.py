@@ -4,7 +4,7 @@ import unittest
 import os
 import datetime
 
-from nydus.common.netauth import *
+from nydus.server.netauth import *
 
 TS_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
