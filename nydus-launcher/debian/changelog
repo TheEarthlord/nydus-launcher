@@ -1,3 +1,15 @@
+nydus-launcher (2.0.0) jammy; urgency=medium
+
+  * Nydus Launcher has been successfully deployed and works well, though some
+    issues remain.
+  * Modified release upon Minecraft close to be username-specific as well as
+    IP-specific.
+  * Moved several major code pieces from nydus-common to nydus-server so they
+    won't be installed on clients. Nydus-cli also needs them, but it depends
+    on nydus-server anyway.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 15 Jul 2025 19:08:54 +1000
+
 nydus-launcher (1.4.5) jammy; urgency=medium
 
   * Added command to Nydus Cli to view UUIDs
