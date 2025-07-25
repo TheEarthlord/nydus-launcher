@@ -271,7 +271,54 @@ class JSONVersion:
         Should be a dictionary containing two keys, "game", and "jvm".
     """
     def read_arguments(self, argjson):
-        pass
+        if not isinstance(argjson, dict):
+            raise TypeError("JSONVersion expected a dict under key 'arguments' but got a {}".format(type(argjson)))
+        for key in argjson:
+            value = argjson[key]
+            if key == GAME_KEY:
+                self.read_game_arguments(value)
+            elif key == JVM_KEY:
+                self.read_jvm_arguments(value)
+            else:
+                raise ValueError("Unrecognised key in version json under 'arguments': {}".format(key))
+
+    """
+    gamejson: contents under the key "game" under the key "arguments" in a version json.
+        Should be a list containing strings and dictionaries. The dictionaries are
+        args with attached rules for when they should and should not be included.
+        The strings are simple arguments to include every time.
+    """
+    def read_game_arguments(self, gamejson):
+        if not isinstance(gamejson, list):
+            raise TypeError("JSONVersion expected a list under key 'game' under key 'arguments' but got a {}".format(type(gamejson)))
+
+        for elem in gamejson:
+            if isinstance(elem, str):
+                self.game_args.append(elem)
+            elif isinstance(elem, dict):
+                #TODO
+                pass
+            else:
+                raise TypeError("JSONVersion found unexpected data type in list of game args: {}".format(type(elem)))
+
+    """
+    jvmjson: contents under the key "jvm" under the key "arguments" in a version json.
+        Should be a list containing strings and dictionaries. The dictionaries are
+        args with attached rules for when they should and should not be included.
+        The strings are simple arguments to include every time.
+    """
+    def read_jvm_arguments(self, jvmjson):
+        if not isinstance(jvmjson, list):
+            raise TypeError("JSONVersion expected a list under key 'jvm' under key 'arguments' but got a {}".format(type(jvmjson)))
+
+        for elem in jvmjson:
+            if isinstance(elem, str):
+                self.jvm_args.append(elem)
+            elif isinstance(elem, dict):
+                #TODO
+                pass
+            else:
+                raise TypeError("JSONVersion found unexpected data type in list of game args: {}".format(type(elem)))
 
     """
     assetjson: contents under the key "assetIndex" in a version json.
