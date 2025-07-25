@@ -43,9 +43,6 @@ FILE_MODE = 0o664
 MAX_MASK = 0o777
 DIR_MASK = MAX_MASK - DIR_MODE
 
-# Downloaded files usually appear inside this directory under .minecraft
-MC_DOWNLOAD_DIR = "libraries"
-
 class DownloadFile:
 
     """
@@ -134,17 +131,14 @@ class DownloadFile:
     Only if the path at which the file should be stored is unknown, infer it
     using the path section of the download URL.
     The infered path is
-    {user's minecraft path}/{MC_DOWNLOAD_DIR}/{path section of url}
-    MC_DOWNLOAD_DIR is used because most downloaded files appear under somewhere inside
-    the minecraft directory, but this position is not included in the url's path
+    {user's minecraft libraries path}/{path section of url}
     """
     def infer_path(self):
         url_path = utils.get_url_path(self.get_url())
         url_path = os.path.dirname(url_path)
 
-        mc_path = utils.get_minecraft_path()
-
-        final_path = os.path.join(mc_path, MC_DOWNLOAD_DIR, url_path)
+        mc_download_path = utils.get_minecraft_libraries_path()
+        final_path = os.path.join(mc_download_path, url_path)
 
         self.path = final_path
     

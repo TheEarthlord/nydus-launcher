@@ -8,7 +8,6 @@ from nydus.common import validity
 from nydus.client import utils
 from nydus.common.MCAccount import MCAccount
 from nydus.client.DownloadFile import DownloadFile
-from nydus.client.DownloadFile import MC_DOWNLOAD_DIR
 from nydus.client.JavaRuntime import JavaRuntime
 
 # Class for storing everything we need to launch
@@ -618,8 +617,7 @@ class MCVersion:
 
         # Otherwise we have to form a path using the contents of the key 'name'
         # The form of 'name' is based on the path where the file goes,
-        # but it starts under ~/.minecraft/<MC_DOWNLOAD_DIR>
-        # (MC_DOWNLOAD_DIR is usually 'libraries')
+        # but it starts under ~/.minecraft/libraries
         # and uses both colons and full stops to delimit directories instead of slashes
         # and doesn't give us the actual filename.
         # We can't distinguish between full stops as directory separators and full
@@ -633,7 +631,7 @@ class MCVersion:
 
         name_parts = re.split(":", jarname)
 
-        dirpath = os.path.join(utils.get_minecraft_path(), MC_DOWNLOAD_DIR, *name_parts)
+        dirpath = os.path.join(utils.get_minecraft_libraries_path(), *name_parts)
         
         if not os.path.isdir(dirpath):
             raise FileNotFoundError("No directory at {} to get required jar files for version {} as specified in JSON file {}.".format(dirpath, self.version, self.get_json_file()))

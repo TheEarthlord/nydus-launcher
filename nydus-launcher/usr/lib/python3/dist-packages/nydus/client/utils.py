@@ -100,6 +100,13 @@ def get_minecraft_path():
     return minecraft_path
 
 """
+Gets path to the position under which downloaded jar files are usually placed.
+Usually ~/.minecraft/libraries
+"""
+def get_minecraft_libraries_path():
+    return os.path.join(get_minecraft_path(), "libraries")
+
+"""
 Gets path to current user's Minecraft assets folder
 (usually /home/<username>/.minecraft/assets)
 Raises OSError if it can't be found.
