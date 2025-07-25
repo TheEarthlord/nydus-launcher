@@ -1,15 +1,16 @@
 
 import json
 import os
-from nydus.client.JavaRuntime import JavaRuntime
+from json.decoder import JSONDecodeError
+from nydus.client import validity
 from nydus.client import utils
+from nydus.client.JavaRuntime import JavaRuntime
 
 # Top level keys, used to decide which method should process each piece of the version file's top dictionary
 ARGUMENTS_KEY = "arguments"
-GAME_KEY = "game"
-JVM_KEY = "jvm"
 ASSETINDEX_KEY = "assetIndex"
 ID_KEY = "id"
+INHERITSFROM_KEY = "inheritsFrom"
 JAVAVERSION_KEY = "javaVersion"
 LIBRARIES_KEY = "libraries"
 LOGGING_KEY = "logging"
@@ -17,6 +18,8 @@ MAINCLASS_KEY = "mainClass"
 TYPE_KEY = "type"
 
 # Lower level keys, usually containing one piece of data each
+GAME_KEY = "game"
+JVM_KEY = "jvm"
 VALUE_KEY = "value"
 FEATURES_KEY = "features"
 SHA1_KEY = "sha1"
@@ -32,6 +35,11 @@ OS_KEY = "os"
 CLIENT_KEY = "client"
 ARGUMENT_KEY = "argument"
 FILE_KEY = "file"
+
+
+USERNAME_ARG = "--username"
+UUID_ARG = "--uuid"
+ACCESSTOKEN_ARG = "--accessToken"
 
 
 VARNAME_START = "${"
@@ -148,6 +156,13 @@ def replace_varname(arg, newval):
 # information is only brought in when downloading the files
 # and forming the launch command.
 
+# TODO there needs to be a final validity check of the JSONVersion data
+# This determines that the version is fine to go ahead with launching,
+# that it has all the different pieces of data needed for a valid Minecraft
+# launch.
+# Also need to at some point check that any inheritance setting does not inherit
+# from itself, otherwise there could be infinite loops.
+
 class JSONVersion:
 
     """
@@ -171,7 +186,9 @@ class JSONVersion:
 
         self.id = None
 
-        # Will contain a JavaRuntime class instance
+        # Will contain a string, the runtime name
+        # When it comes to downloading stuff, create
+        # a JavaRuntime instance using the name.
         self.java_runtime = None
 
         self.jars = []
@@ -187,6 +204,19 @@ class JSONVersion:
         self.user_type = "msa"
 
         self.read_json(verjson)
+        self.sanity_check()
+
+    """
+    Called at the end of instantiation to make sure none of the data is
+    broken in unfixable ways.
+    This is not the check that the data is complete enough to launch Minecraft
+    with, as some data may only be filled in after inheritance is processed,
+    which is done manually after instantiation, and therefore after this method.
+    Returns nothing; if problems are found, raises an exception.
+    """
+    def sanity_check(self):
+        if self.inherits_from == self.id:
+            raise ValueError("JSONVersion with id {} is set to inherit from itself; this is an infinte loop and not allowed".format(self.id))
 
     """
     version: string, Minecraft version validated by common.validity
@@ -213,7 +243,105 @@ class JSONVersion:
     This method fills out the instance with the data found in the JSON.
     """
     def read_json(self, verjson):
+        for key in verjson:
+            value = verjson[key]
+            if key == ARGUMENTS_KEY:
+                self.read_arguments(value)
+            elif key == ASSETINDEX_KEY:
+                self.read_assetindex(value)
+            elif key == ID_KEY:
+                self.read_id(value)
+            elif key == INHERITSFROM_KEY:
+                self.read_inheritsfrom(value)
+            elif key == JAVAVERSION_KEY:
+                self.read_javaversion(value)
+            elif key == LIBRARIES_KEY:
+                self.read_libraries(value)
+            elif key == LOGGING_KEY:
+                self.read_logging(value)
+            elif key == MAINCLASS_KEY:
+                self.read_mainclass(value)
+            elif key == TYPE_KEY:
+                self.read_type(value)
+            else:
+                raise ValueError("Unrecognised key in version json top level: {}".format(key))
+
+    """
+    argjson: contents under the key "arguments" in a version json.
+        Should be a dictionary containing two keys, "game", and "jvm".
+    """
+    def read_arguments(self, argjson):
         pass
+
+    """
+    assetjson: contents under the key "assetIndex" in a version json.
+        Should be a dictionary describing asset and asset index.
+    """
+    def read_assetindex(self, assetjson):
+        pass
+
+    """
+    idjson: contents under the key "id" in a version json.
+        Should be a string, the version name.
+    """
+    def read_id(self, idjson):
+        if validity.is_valid_minecraft_version(idjson):
+            self.id = idjson
+        else:
+            raise ValueError("JSONVersion expected a minecraft version string under the key 'id', but got '{}' of type {}".format(idjson, type(idjson)))
+
+
+    """
+    inheritjson: contents under the key "inheritsFrom" in a version json.
+        Should be a string, the version name which this version inherits from.
+    """
+    def read_inheritsfrom(self, inheritjson):
+        if validity.is_valid_minecraft_version(inheritjson):
+            self.inherits_from = inheritjson
+        else:
+            raise ValueError("JSONVersion expected a minecraft version string under the key 'inheritsFrom', but got '{}' of type {}".format(inheritjson, type(inheritjson)))
+    
+    """
+    javajson: contents under the key "javaVersion" in a version json.
+        Should be a dictionary describing the java runtime needed.
+    """
+    def read_javaversion(self, javajson):
+        pass
+
+    """
+    libjson: contents under the key "libraries" in a version json.
+        Should be a list containing dictionaries, each describing one jar file needed.
+    """
+    def read_libraries(self, libjson):
+        pass
+
+    """
+    logjson: contents under the key "logging" in a version json.
+        Should be a dictionary describing the log4j configuration file.
+    """
+    def read_logging(self, logjson):
+        pass
+
+    """
+    classjson: contents under the key "mainClass" in a version json.
+        Should be a string, the main class to invoke when launching Minecraft.
+    """
+    def read_mainclass(self, classjson):
+        if validity.is_nonempty_str(classjson):
+            self.main_class = classjson
+        else:
+            raise ValueError("JSONVersion expected a string under the key 'mainClass', but got '{}' of type {}".format(classjson, type(classjson)))
+
+    """
+    typejson: contents under the key "type" in a version json.
+        Should be a string, the type of Minecraft version this is.
+        Usually it's "release".
+    """
+    def read_type(self, typejson):
+        if validity.is_nonempty_str(typejson):
+            self.type = typejson
+        else:
+            raise ValueError("JSONVersion expected a string under the key 'type', but got '{}' of type {}".format(typejson, type(typejson)))
 
     """
     ancestor: a JSONVersion instance
@@ -249,10 +377,68 @@ class JSONVersion:
         pass
 
     """
+    Checks that all the data is complete enough to create a launch command with.
+    This method does not check that files have been downloaded and correctly stored;
+    only that the right fields are present in the JSONVersion instance.
+    This includes
+    - game_args must be nonempty and must include username, uuid, and access token
+    - jvm_args must be nonempty
+    - asset_index must exist
+    - id must exist
+    - java_runtime must exist
+    - jars must be nonempty
+    - log_config must exist
+    - main_class must exist
+    - version_type must exist
+    - user_type must exist
+    Returns nothing. Raises an exception if something is missing.
+    """
+    def check_launch_ready(self):
+        if not self.id:
+            raise ValueError("JSONVersion not ready to launch: no id")
+
+        if not self.game_args:
+            raise ValueError("JSONVersion {} not ready to launch: no game args".format(self.id))
+
+        if not USERNAME_ARG in self.game_args:
+            raise ValueError("JSONVersion {} not ready to launch: username argument missing from game args")
+
+        if not UUID_ARG in self.game_args:
+            raise ValueError("JSONVersion {} not ready to launch: uuid argument missing from game args")
+
+        if not ACCESSTOKEN_ARG in self.game_args:
+            raise ValueError("JSONVersion {} not ready to launch: access token argument missing from game args")
+
+        if not self.jvm_args:
+            raise ValueError("JSONVersion {} not ready to launch: no jvm args".format(self.id))
+
+        if not self.jars:
+            raise ValueError("JSONVersion {} not ready to launch: no jars".format(self.id))
+
+        if not self.asset_index:
+            raise ValueError("JSONVersion {} not ready to launch: no asset index".format(self.id))
+
+        if not self.java_runtime:
+            raise ValueError("JSONVersion {} not ready to launch: no java runtime".format(self.id))
+
+        if not self.log_config:
+            raise ValueError("JSONVersion {} not ready to launch: no log config".format(self.id))
+
+        if not self.main_class:
+            raise ValueError("JSONVersion {} not ready to launch: no main class".format(self.id))
+
+        if not self.version_type:
+            raise ValueError("JSONVersion {} not ready to launch: no version type".format(self.id))
+
+        if not self.user_type:
+            raise ValueError("JSONVersion {} not ready to launch: no user type".format(self.id))
+
+    """
     mc_account: an instance of MCAccount
     Returns a list of strings, the command and args to create a new process which is a Minecraft
     game running this version. Does not actually launch the game; something else needs to create
     the new process using this method's return value.
+    May raise exceptions if the instance does not have sufficient data to launch Minecraft.
     """
     def make_launch_command(self, mc_account):
         pass
