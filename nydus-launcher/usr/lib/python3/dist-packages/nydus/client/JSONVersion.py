@@ -36,6 +36,7 @@ CLIENT_KEY = "client"
 ARGUMENT_KEY = "argument"
 FILE_KEY = "file"
 
+ALLOW_ACTION = "allow"
 
 USERNAME_ARG = "--username"
 UUID_ARG = "--uuid"
@@ -291,15 +292,9 @@ class JSONVersion:
     def read_game_arguments(self, gamejson):
         if not isinstance(gamejson, list):
             raise TypeError("JSONVersion expected a list under key 'game' under key 'arguments' but got a {}".format(type(gamejson)))
-
-        for elem in gamejson:
-            if isinstance(elem, str):
-                self.game_args.append(elem)
-            elif isinstance(elem, dict):
-                #TODO
-                pass
-            else:
-                raise TypeError("JSONVersion found unexpected data type in list of game args: {}".format(type(elem)))
+        
+        new_args = JSONVersion.read_arglist(gamejson)
+        self.game_args.extend(new_args)
 
     """
     jvmjson: contents under the key "jvm" under the key "arguments" in a version json.
@@ -311,14 +306,8 @@ class JSONVersion:
         if not isinstance(jvmjson, list):
             raise TypeError("JSONVersion expected a list under key 'jvm' under key 'arguments' but got a {}".format(type(jvmjson)))
 
-        for elem in jvmjson:
-            if isinstance(elem, str):
-                self.jvm_args.append(elem)
-            elif isinstance(elem, dict):
-                #TODO
-                pass
-            else:
-                raise TypeError("JSONVersion found unexpected data type in list of game args: {}".format(type(elem)))
+        new_args = JSONVersion.read_arglist(jvmjson)
+        self.jvm_extend(new_args)
 
     """
     assetjson: contents under the key "assetIndex" in a version json.
@@ -389,6 +378,106 @@ class JSONVersion:
             self.type = typejson
         else:
             raise ValueError("JSONVersion expected a string under the key 'type', but got '{}' of type {}".format(typejson, type(typejson)))
+
+    """
+    rulelist: a list, the contents of the 'rules' key in an object in the version json
+    Rules determine whether an element should be included or ignored, based
+    on parameters like which OS you're running on.
+    The list contains dictionaries, each representing a rule and containing a key "action" and
+    some information about under what circumstances the action should be taken.
+    So far I've only seen "allow" actions, meaing the object should be included if
+    the rule is met.
+    This method looks at the rule list and returns True if the corresponding
+    element should be included, False if not.
+    """
+    def resolve_rule(rulelist):
+        
+        # If these are in the rule, the rule matches us
+        wanted_elements = {
+            "features": {
+            },
+            "os": {
+                "name": "linux",
+                "arch": "x86",
+            }
+        }
+
+        if not isinstance(rulelist, list):
+            raise TypeError("Contents of 'rules' key in version json should be a list; instead, got '{}' of type {}".format(rulelist, type(rulelist)))
+
+        for rule in rulelist:
+            for key in rule:
+                if key == ACTION_KEY:
+                    is_allow = (key == ALLOW_ACTION)
+                else:
+                    # Check that the data structure in the rule
+                    # is present in the desired_elements dict
+                    # If so, it passes.
+
+                    rule_obj = rule
+                    wanted_obj = wanted_elements
+
+                    while True:
+                        if len(rule_obj) > 1:
+                            rkey = rule_obj.keys()[0]
+                            rval = rule_obj[rkey]
+
+                            wval = wanted_obj.get(rkey)
+                            if type(wval) == type(rval):
+                                if isinstance(wval, dict):
+                                    rule_obj = rval
+                                    wanted_obj = wval
+                                elif isinstance(wval, str):
+                                    if rval == wval:
+                                        # The rule has a structure matching the contents of the "wanted elements" dictionary,
+                                        # so the rule passes.
+                                        return True
+                                else:
+                                    break
+                            else:
+                                break
+                        else:
+                            break
+        return False
+
+
+    """
+    arglist: a list of dictionaries and strings.
+        Each dict should contain a "rules" key and a "value" key.
+    This method reads the list and returns all the "values" which
+    correspond to a "rule" which is met.
+    """
+    def read_arglist(arglist):
+        met_args = []
+
+        for elem in arglist:
+            if isinstance(elem, str):
+                met_args.append(elem)
+
+            elif isinstance(elem, dict):
+
+                rules = elem.get(RULES_KEY)
+                if not isinstance(rules, list):
+                    raise KeyError("JSONVersion expected a key 'rules' containing a list inside a dictionary about an argument, but there was not one. The dictionary: {}".format(elem))
+                rule_passed = JSONVersion.resolve_rule(rules)
+                if rule_passed:
+                    values = elem.get(VALUE_KEY)
+                    if values == None:
+                        raise KeyError("JSONVersion expected a key 'value' inside a dictionary about an argument, but there was not one. The dictionary: {}".format(elem))
+
+                    if isinstance(values, str):
+                        met_args.append(values)
+                    elif isinstance(values, list):
+                        for arg in values:
+                            if isinstance(arg, str):
+                                met_args.append(arg)
+                    else:
+                        raise TypeError("Expected contents of key 'value' regarding an argument to be a string or list, but was {}".format(type(values)))
+
+            else:
+                raise TypeError("JSONVersion found unexpected data type in list of args: {}".format(type(elem)))
+
+        return met_args
 
     """
     ancestor: a JSONVersion instance
