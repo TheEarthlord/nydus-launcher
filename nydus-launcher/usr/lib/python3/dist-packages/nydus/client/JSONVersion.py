@@ -712,8 +712,10 @@ class JSONVersion:
     """
     mc_account: an instance of MCAccount
     Many parts of the Minecraft version data involve variables, identifiable by the form "${varname}".
-    This method expands all such variables in this instance's data to their real values. The method is
-    only called by make_launch_command, not in the normal process of instantiating the class.
+    This method expands all such variables in this instance's data to their real values. Therefore,
+    it will modify the contents of fields jvm_args, log_config_arg, and game_args using other data
+    the class has stored.
+    The method is only called by make_launch_command, not in the normal process of instantiating the class.
     A Minecraft account must be provided because some of the variables are username, access token, etc.
     """
     def replace_variables(self, mc_account):
@@ -798,4 +800,26 @@ class JSONVersion:
     May raise exceptions if the instance does not have sufficient data to launch Minecraft.
     """
     def make_launch_command(self, mc_account):
-        pass
+
+        if not isinstance(mc_account, MCAccount):
+            raise TypeError("To make a launch command, you must pass an MCAccount instance. Instead, got a {}".format(type(mc_account)))
+
+        self.replace_variables(mc_account)
+
+        # Launch command is as follows:
+        # java runtime
+        # jvm args (which includes -cp and the jars)
+        # log config arg
+        # main class
+        # game args (including version, username, access token, etc)
+
+        launch_command = [
+            "{}".format(self.java_runtime_bin)
+        ]
+
+        launch_command.extend(["{}".format(a) for a in self.jvm_args])
+        launch_command.append("{}".format(self.log_config_arg))
+        launch_command.append("{}".format(self.main_class))
+        launch_command.extend(["{}".format(a) for a in self.game_args])
+        return launch_command
+
