@@ -92,13 +92,6 @@ class JSONFileStore:
 # information is only brought in when downloading the files
 # and forming the launch command.
 
-# TODO there needs to be a final validity check of the JSONVersion data
-# This determines that the version is fine to go ahead with launching,
-# that it has all the different pieces of data needed for a valid Minecraft
-# launch.
-# Also need to at some point check that any inheritance setting does not inherit
-# from itself, otherwise there could be infinite loops.
-
 class JSONVersion:
 
     """
@@ -298,14 +291,80 @@ class JSONVersion:
         Should be a dictionary describing the java runtime needed.
     """
     def read_javaversion(self, javajson):
-        pass
+
+        if not isinstance(javajson, dict):
+            raise TypeError("Expected a dictionary under the key 'javaVersion' but got {} instead".format(type(javajson)))
+
+        runtime = javajson.get(COMPONENT_KEY)
+
+        if not validity.is_nonempty_str(runtime):
+            raise ValueError("Expected key '{}' to contain a nonempty string for the java runtime, but instead got '{}' of type {}".format(COMPONENT_KEY, runtime, type(runtime)))
+
+        self.java_runtime = runtime
 
     """
     libjson: contents under the key "libraries" in a version json.
         Should be a list containing dictionaries, each describing one jar file needed.
     """
     def read_libraries(self, libjson):
-        pass
+        if not isinstance(libjson, list):
+            raise TypeError("Expected a list under the key 'libraries', but got {} instead".format(type(libjson)))
+
+        for elem in libjson:
+            if not isinstance(elem, dict):
+                raise TypeError("Expected all elements of the library list to be dictionaries, but found one which is {}: '{}'".format(type(elem), elem))
+            self.read_one_jar(elem)
+
+    """
+    jarjson: element inside the list under 'libraries' in version json.
+        Should be a dictionary.
+    This method processes the element to figure out everything that needs to be known about it, and adds it to the list of all jars.
+    """
+    def read_one_jar(self, jarjson):
+        
+        # First check if there are rules.
+        # If there are rules and they fail, don't include the jar
+
+        if RULES_KEY in jarjson:
+            ruleslist = jarjson[RULES_KEY]
+            resolution = self.resolve_rule(ruleslist)
+            if not resolution:
+                return
+
+        # Second check if there is download information.
+
+        downdict = jarjson.get(DOWNLOADS_KEY)
+        if isinstance(downdict, dict):
+
+            artdict = downdict.get(ARTIFACT_KEY)
+
+            if not isinstance(artifact_dict, dict):
+                raise KeyError("Expected key '{}' under key '{}' i a jar's info json to contain a dictionary, but got {}".format(ARTIFACT_KEY, DOWNLOADS_KEY, type(artifact_dict)))
+
+            jar_path = artifact_dict.get(PATH_KEY)
+            if not jar_name:
+                raise KeyError("Expected jar path under key {} but key did not exist".format(PATH_KEY))
+
+            jar_hash = artifact_dict.get(SHA1_KEY)
+            if not jar_hash:
+                raise KeyError("Expected jar hash under key {} but key did not exist".format(SHA1_KEY))
+
+            jar_url = artifact_dict.get(URL_KEY)
+            if not jar_url:
+                raise KeyError("Expected jar url under key {} but key did not exist".format(URL_KEY))
+
+            jar_store = JSONFileStore(jar_path, jar_hash, jar_url)
+
+            self.jars.append(jar_store)
+
+        # If no download information, just store the name as a string
+        else:
+            jar_name = jarjson.get(NAME_KEY)
+            if validity.is_nonempty_str(jar_name):
+                self.jars.append(jar_name)
+            else:
+                raise KeyError("Expected a 'name' key to contain a string as name for a jar file, but found '{}' under the key instead".format(jar_name))
+
 
     """
     logjson: contents under the key "logging" in a version json.
