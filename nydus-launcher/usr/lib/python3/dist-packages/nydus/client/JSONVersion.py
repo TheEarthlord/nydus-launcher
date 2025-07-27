@@ -117,7 +117,8 @@ class JSONVersion:
         self.game_args = []
         self.jvm_args = []
 
-        # Need to rethink details of how this is stored
+        # Holds a JSONFileStore to keep the data we need to know
+        # for file download and launch
         self.asset_index = None
 
         self.id = None
@@ -127,10 +128,14 @@ class JSONVersion:
         # a JavaRuntime instance using the name.
         self.java_runtime = None
 
+        # Will contain a mix of strings (for the files which can't be downloaded)
+        # and JSONFileStores (for the files which can be downloaded and we need to hold the data until downloads and launch)
         self.jars = []
 
-        # Need to think carefully about how this is stored
+        # Holds a JSONFileStore to keep the data we need to know
+        # for file download and launch
         self.log_config = None
+        self.log_config_arg = None
 
         self.main_class = None
         self.version_type = None
@@ -249,7 +254,23 @@ class JSONVersion:
         Should be a dictionary describing asset and asset index.
     """
     def read_assetindex(self, assetjson):
-        pass
+        if not isinstance(assetjson, dict):
+            raise TypeError("Expected a dictionary under key 'assetIndex' in version json, but got a {}".format(type(assetjson)))
+        asset_id = assetjson.get(ID_KEY)
+        if not asset_id:
+            raise KeyError("Expected asset index under key {} but key did not exist".format(ID_KEY))
+
+        asset_hash = assetjson.get(SHA1_KEY)
+        if not asset_hash:
+            raise KeyError("Expected assetIndex hash under key {} but key did not exist".format(SHA1_KEY))
+
+        asset_url = assetjson.get(URL_KEY)
+        if not asset_url:
+            raise KeyError("Expected assetIndex url under key {} but key did not exist".format(URL_KEY))
+
+        asset_store = JSONFileStore(asset_id, asset_hash, asset_url)
+
+        self.asset_index = asset_store
 
     """
     idjson: contents under the key "id" in a version json.
@@ -494,6 +515,9 @@ class JSONVersion:
 
         if not self.log_config:
             raise ValueError("JSONVersion {} not ready to launch: no log config".format(self.id))
+
+        if not self.log_config_arg:
+            raise ValueError("JSONVersion {} not ready to launch: no log config argument".format(self.id))
 
         if not self.main_class:
             raise ValueError("JSONVersion {} not ready to launch: no main class".format(self.id))
