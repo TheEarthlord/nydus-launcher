@@ -312,7 +312,39 @@ class JSONVersion:
         Should be a dictionary describing the log4j configuration file.
     """
     def read_logging(self, logjson):
-        pass
+        if not isinstance(logjson, dict):
+            raise TypeError("Expected the contents of key 'logging' in version json to be a dictionary, but got {}".format(type(logjson)))
+
+        clidict = logjson.get(CLIENT_KEY)
+        if not isinstance(clidict, dict):
+            raise KeyError("Expected a dictionary under key '{}', but it was missing from the logging dictionary: {}".format(CLIENT_KEY, logjson))
+
+        arg = clidict.get(ARGUMENT_KEY)
+        if not validity.is_nonempty_str(arg):
+            raise ValueError("Expected an argument string under the key '{}', but it was missing from the logging client dictionary {}".format(ARGUMENT_KEY, clidict))
+
+        self.log_config_arg = arg
+
+        filedict = clidict.get(FILE_KEY)
+        if not isinstance(filedict, dict):
+            raise KeyError("Expected a dictionary under key '{}', but it was missing from the logging client dictionary: {}".format(FILE_KEY, clidict))
+
+        log_id = filedict.get(ID_KEY)
+        if not log_id:
+            raise KeyError("Expected logging id under key {} but key did not exist".format(ID_KEY))
+
+        log_hash = filedict.get(SHA1_KEY)
+        if not log_hash:
+            raise KeyError("Expected logfile hash under key {} but key did not exist".format(SHA1_KEY))
+
+        log_url = filedict.get(URL_KEY)
+        if not log_url:
+            raise KeyError("Expected logfile url under key {} but key did not exist".format(URL_KEY))
+
+        log_store = JSONFileStore(log_id, log_hash, log_url)
+
+        self.log_config = log_store
+
 
     """
     classjson: contents under the key "mainClass" in a version json.
