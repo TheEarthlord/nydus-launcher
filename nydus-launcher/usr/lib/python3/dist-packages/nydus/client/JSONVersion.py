@@ -43,6 +43,39 @@ UUID_ARG = "--uuid"
 ACCESSTOKEN_ARG = "--accessToken"
 
 
+# Class used as a temporary store for data about
+# files which may need to be downloaded in the
+# future, without resolving full paths.
+class JSONFileStore:
+
+    """
+    name: nonempty string
+    sha1: a sha1 hash digest, in accordance with utils.is_sha1
+    url: a file download url, in accordance with utils.is_download_url
+    """
+    def __init__(self, name, sha1, url):
+
+        if not validity.is_nonempty_str(name):
+            raise ValueError("JSONFileStore expected a nonempty string as name but was instead given '{}'".format(name))
+
+        if not utils.is_sha1(sha1):
+            raise ValueError("JSONFileStore provided a sha1 which was not a properly formatted sha1 hash digest: {}".format(sha1))
+
+        if not utils.is_download_url(url):
+            raise ValueError("JSONFileStore provided a url which was not a properly formatted download url: {}".format(url))
+
+        self.name = name
+        self.sha1 = sha1
+        self.url = url
+
+    def get_name(self):
+        return self.name
+
+    def get_sha1(self):
+        return self.sha1
+
+    def get_url(self):
+        return self.url
 
 # Class for storing all the information contained
 # in a particular JSON version file
