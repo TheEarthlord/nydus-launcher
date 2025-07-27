@@ -77,6 +77,9 @@ class JSONFileStore:
     def get_url(self):
         return self.url
 
+    def copy(self):
+        return JSONFileStore(self.name, self.sha1, self.url)
+
 # Class for storing all the information contained
 # in a particular JSON version file
 
@@ -139,6 +142,56 @@ class JSONVersion:
 
         self.read_json(verjson)
         self.sanity_check()
+
+    def get_game_args(self):
+        newlist = [a for a in self.game_args]
+        return newlist
+
+    def get_jvm_args(self):
+        newlist = [a for a in self.jvm_args]
+        return newlist
+
+    def get_asset_index(self):
+        if isinstance(self.asset_index, JSONFileStore):
+            return self.asset_index.copy()
+        else:
+            return self.asset_index
+
+    def get_id(self):
+        return self.id
+
+    def get_java_runtime(self):
+        return self.java_runtime
+
+    def get_jars(self):
+        newlist = []
+        for a in self.jars:
+            if isinstance(a, JSONFileStore):
+                newlist.append(a.copy())
+            else:
+                newlist.append(a)
+        return newlist
+
+    def get_log_config(self):
+        if isinstance(self.log_config, JSONFileStore):
+            return self.log_config.copy()
+        else:
+            return self.log_config
+
+    def get_log_config_arg(self):
+        return self.log_config_arg
+
+    def get_main_class(self):
+        return self.main_class
+
+    def get_version_type(self):
+        return self.version_type
+
+    def get_inherits_from(self):
+        return self.inherits_from
+
+    def get_user_type(self):
+        return self.user_type
 
     """
     Called at the end of instantiation to make sure none of the data is
@@ -530,9 +583,50 @@ class JSONVersion:
     ancestor: a JSONVersion instance
     The assumption is that the JSONVersion instance given as 'ancestor' is one this instance should inherit from.
     This method modifies this instance accordingly, overwriting and adding material from the ancestor instance as appropriate.
+    Note this method is not recursive. It does not find or process any inheritance of the ancestor. You should follow
+    the chain of ancestor inheritance to the top, then call this method for each step down the chain, ending with the
+    version you actually which to launch.
     """
     def inherit_from(self, ancestor):
-        pass
+        # The rules are
+        # game_args, jvm_args, jars have ancestor data added to them
+        # id, asset_index, java_runtime, log_config,
+        # log_config_arg, main_class, version_type, user_type
+        # are overwritten by ancestor data only if they don't exist
+        # in the current version's data.
+
+        ancs_game_args = ancestor.get_game_args()
+        self.game_args.extend(ancs_game_args)
+
+        ancs_jvm_args = ancestor.get_jvm_args()
+        self.jvm_args.extend(ancs_jvm_args)
+
+        ancs_jars = ancestor.get_jars()
+        self.jars.extend(ancs_jars)
+
+        if not self.id:
+            self.id = ancestor.get_id()
+
+        if not self.asset_index:
+            self.asset_index = ancestor.get_asset_index()
+
+        if not self.java_runtime:
+            self.java_runtime = ancestor.get_java_runtime()
+
+        if not self.log_config:
+            self.log_config = ancestor.get_log_config()
+
+        if not self.log_config_arg:
+            self.log_config_arg = ancestor.get_log_config_arg()
+
+        if not self.main_class:
+            self.main_class = ancestor.get_main_class()
+
+        if not self.version_type:
+            self.version_type = ancestor.get_version_type()
+
+        if not self.user_type:
+            self.user_type = ancestor.get_user_type()
 
     """
     Looks for all the files known to be needed for this Minecraft version.
