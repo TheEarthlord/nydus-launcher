@@ -121,6 +121,19 @@ def get_minecraft_assets_path():
     return assets_path
 
 """
+Gets path to the current user's Minecraft log config folder
+(usually /home/<username>/.minecraft/assets/log_configs)
+Raises OSError if it can't be found.
+"""
+def get_minecraft_log_config_dir():
+    assets_path = get_minecraft_assets_path
+    log_cdir = os.path.join(assets_path, "log_configs")
+
+    if not os.path.isdir(log_cdir):
+        raise OSError("User's Minecraft log config directory does not exist at {}".format(log_cdir))
+    return log_cdir
+
+"""
 index: an integer or string representing an integer. Must be nonnegative.
 Get path to location for a specific asset index's JSON file.
 Usually /home/<username>/.minecraft/assets/indexes/<index>.json

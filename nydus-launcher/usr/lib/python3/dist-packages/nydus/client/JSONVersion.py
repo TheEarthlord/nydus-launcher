@@ -124,6 +124,11 @@ class JSONVersion:
         # a JavaRuntime instance using the name.
         self.java_runtime = None
 
+        # String, absolute path to java runtime entry binary.
+        # Only filled out during download_all when the runtime class
+        # is instantiated.
+        self.java_runtime_bin = None
+
         # Will contain a mix of strings (for the files which can't be downloaded)
         # and JSONFileStores (for the files which can be downloaded and we need to hold the data until downloads and launch)
         self.jars = []
@@ -350,8 +355,8 @@ class JSONVersion:
 
         runtime = javajson.get(COMPONENT_KEY)
 
-        if not validity.is_nonempty_str(runtime):
-            raise ValueError("Expected key '{}' to contain a nonempty string for the java runtime, but instead got '{}' of type {}".format(COMPONENT_KEY, runtime, type(runtime)))
+        if not validity.is_valid_java_runtime(runtime):
+            raise ValueError("Expected key '{}' to contain a valid java runtime string, but instead got '{}' of type {}".format(COMPONENT_KEY, runtime, type(runtime)))
 
         self.java_runtime = runtime
 
@@ -630,10 +635,79 @@ class JSONVersion:
 
     """
     Looks for all the files known to be needed for this Minecraft version.
-    If any are missing, downloads them if possible
+    If any are missing, downloads them if possible.
+    Note this method requires a user, a .minecraft directory, and so on.
     """
     def download_all(self):
-        pass
+
+        self.download_asset_index()
+        self.download_java_runtime()
+        self.download_jars()
+        self.download_log_config()
+
+    def download_asset_index(self):
+        if isinstance(self.asset_index, JSONFileStore):
+            fpath = utils.get_asset_index_path(self.asset_index.get_id())
+            dirpath = os.path.dirname(fpath)
+            fname = os.path.basename(fpath)
+
+            df = DownloadFile(
+                self.asset_index.get_url(),
+                self.asset_index.get_sha1(),
+                name=fname,
+                path=dirpath,
+            )
+            df.download()
+
+        else:
+            raise TypeError("Attempted to download asset_index but object was '{}' instead of a JSONFileStore".format(self.asset_index))
+
+    """
+    This method also fills out the java_runtime_bin field
+    """
+    def download_java_runtime(self):
+        jr = JavaRuntime(self.java_runtime)
+        jr.setup_runtime()
+        self.java_runtime_bin = jr.get_java()
+
+    def download_jars(self):
+        for jarfile in self.jars:
+            if isinstance(jarfile, str):
+                # Nothing to download
+                pass
+            elif isinstance(jarfile, JSONFileStore):
+                # If a JSONFileStore was used, the file
+                # had a path which was stored as the id
+                path = jarfile.get_id()
+                url = jarfile.get_url()
+                sha1 = jarfile.get_sha1()
+
+                fname = os.path.basename(path)
+
+                # The DownloadFile class, if not given a path to put the file under,
+                # assumes it's a jar which belongs under 'libraries' and uses the
+                # url to figure the rest of the path out.
+                df = DownloadFile(url, sha1, name=fname)
+                df.download()
+
+            else:
+                raise TypeError("In list of jars, was expecting only string and JSONFileStore, but found {}".format(type(jarfile)))
+
+    def download_log_config(self):
+        if isinstance(self.log_config, JSONFileStore):
+            dirpath = utils.get_minecraft_log_config_dir()
+            fname = self.log_config.get_id()
+
+            df = DownloadFile(
+                self.log_config.get_url(),
+                self.log_config.get_sha1(),
+                name=fname,
+                path=dirpath,
+            )
+            df.download()
+
+        else:
+            raise TypeError("Attempted to download log_config but object was '{}' instead of a JSONFileStore".format(self.log_config))
 
     """
     mc_account: an instance of MCAccount
@@ -712,6 +786,9 @@ class JSONVersion:
 
         if not self.user_type:
             raise ValueError("JSONVersion {} not ready to launch: no user type".format(self.id))
+
+        if not self.java_runtime_bin:
+            raise ValueError("JSONVersion {} not ready to launch: no java runtime binary path; did you call download_all first?".format(self.id))
 
     """
     mc_account: an instance of MCAccount
