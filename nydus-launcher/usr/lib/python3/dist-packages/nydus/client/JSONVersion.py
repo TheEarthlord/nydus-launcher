@@ -296,7 +296,7 @@ class JSONVersion:
                 verjson = json.load(f)
             except JSONDecodeError as e:
                 raise ValueError("Failed to parse json in {} at line {} col {} char {}"\
-                            \.format(json_file, e.lineno, e.colno, e.pos))
+                            .format(json_file, e.lineno, e.colno, e.pos))
         return JSONVersion(verjson)
 
     """
