@@ -1,4 +1,4 @@
 usr/lib/python3/dist-packages/nydus/common/Config.py
 usr/lib/python3/dist-packages/nydus/common/MCAccount.py
-usr/lib/python3/dist-packages/nydus/common/NydusInfo.py
+usr/lib/python3/dist-packages/nydus/common/nydus_info.py
 usr/lib/python3/dist-packages/nydus/common/validity.py
