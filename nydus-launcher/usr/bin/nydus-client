@@ -17,7 +17,7 @@ from nydus.client import nodupe
 from nydus.client import utils
 from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
-from nydus.client.MCVersion import MCVersion
+from nydus.client.MCLauncher import MCLauncher
 from nydus.common.MCAccount import MCAccount
 from nydus.common import validity
 
@@ -229,7 +229,7 @@ def request(ssock):
 
     mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
 
-    mc_instance = MCVersion(mc_version, mc_acc)
+    mc_instance = MCLauncher(mc_version, mc_acc)
 
 
     # Although launch() downloads all the files, we put a

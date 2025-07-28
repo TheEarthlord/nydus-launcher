@@ -2,7 +2,6 @@
 import hashlib
 import json
 import os
-import re
 from json.decoder import JSONDecodeError
 from nydus.common import validity
 from nydus.common import nydus_info
@@ -718,7 +717,7 @@ class JSONVersion:
         for jarfile in self.jars:
             if isinstance(jarfile, str):
                 # Nothing to download, but we need to check the directory exists
-                name_parts = re.split(JAR_NAMEPATH_SEPARATOR, jarfile)
+                name_parts = jarfile.split(JAR_NAMEPATH_SEPARATOR)
                 dirpath = os.path.join(utils.get_minecraft_libraries_path(), *name_parts)
                 if not os.path.isdir(dirpath):
                     raise FileNotFoundError("No directory at {} to get undownloadable required jar files for JSONVersion".format(dirpath))
@@ -777,7 +776,7 @@ class JSONVersion:
                 # The name only contains a path to a directory; we need to add all
                 # the jarfiles inside that directory to our classpath.
 
-                name_parts = re.split(JAR_NAMEPATH_SEPARATOR, jar)
+                name_parts = jar.split(JAR_NAMEPATH_SEPARATOR)
                 dirpath = os.path.join(utils.get_minecraft_libraries_path(), *name_parts)
                 contents = os.listdir(dirpath)
                 for name in contents:
@@ -946,6 +945,8 @@ class JSONVersion:
 
         if not isinstance(mc_account, MCAccount):
             raise TypeError("To make a launch command, you must pass an MCAccount instance. Instead, got a {}".format(type(mc_account)))
+
+        self.check_launch_ready()
 
         self.replace_variables(mc_account)
 
