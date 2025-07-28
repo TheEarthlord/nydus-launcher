@@ -5,6 +5,65 @@
 VARNAME_START = "${"
 VARNAME_END = "}"
 
+PLAYERNAME_VAR = "auth_player_name"
+VERSION_VAR = "version_name"
+GAMEDIR_VAR = "game_directory"
+ASSETROOT_VAR = "assets_root"
+ASSETINDEX_VAR = "assets_index_name"
+UUID_VAR = "auth_uuid"
+ACCESSTOKEN_VAR = "auth_access_token"
+USERTYPE_VAR = "user_type"
+VERSTIONTYPE_VAR = "version_type"
+NATIVESDIR_VAR = "natives_directory"
+LAUNCHERNAME_VAR = "launcher_name"
+LAUNCHERVERSION_VAR = "launcher_version"
+CLASSPATH_VAR = "classpath"
+
+# Not sure why this varname is so generic, but
+# it's the log configuration file path
+LOGCONFIG_VAR = "path",
+
+CLIENTID_VAR = "clientid"
+XUID_VAR = "xuid"
+
+# These are the variables which we replace with actual values
+# using the data in the JSONVersion instance.
+USED_VARIABLES = [
+    PLAYERNAME_VAR,
+    VERSION_VAR,
+    GAMEDIR_VAR,
+    ASSETROOT_VAR,
+    ASSETINDEX_VAR,
+    UUID_VAR,
+    ACCESSTOKEN_VAR,
+    USERTYPE_VAR,
+    VERSTIONTYPE_VAR,
+    NATIVESDIR_VAR,
+    LAUNCHERNAME_VAR,
+    LAUNCHERVERSION_VAR,
+    CLASSPATH_VAR,
+    LOGCONFIG_VAR,
+]
+
+# These are the variables in the version JSON which we will
+# remove, along with their invoking arguments, if they appear
+# at all. We don't know how to get their actual values and
+# they don't seem necessary.
+
+# Twopart variables come with a preceeding argument that names
+# the information, and a succeeding argument that uses the variable
+# name. e.g.
+# "--clientId", "${clientid}"
+# Both the arg containing the varname and the preceeding one
+# need to be deleted from the list.
+IGNORED_TWOPART_VARIABLES = [
+    CLIENTID_VAR,
+    XUID_VAR,
+]
+
+IGNORED_ONEPART_VARIABLES = []
+
+
 """
 Returns True if name is a string and a variable for the JSON version
 purposes (i.e. starts with '${', ends with '}', and has something in
@@ -100,4 +159,39 @@ def replace_varname(arg, newval):
         return result
 
     return ""
+
+"""
+varlist: any list of variables (all elements should be strings)
+There are some variables which we don't expand because for one reason or another we don't
+know how to get values for them. This method deletes all such variables from our instance
+data.
+Returns nothing; the list is modified in-place.
+"""
+def remove_ignored_variables_from_list(varlist):
+
+    if not isinstance(varlist, list):
+        raise TypeError("varstrings.remove_ignored_variables_from_list expects a list as input; got {}".format(type(varlist)))
+    
+    # We iterate backwards because that makes it much easier to deal with
+    # ignored variables that have a preceeding argument attached
+
+    idx = len(varlist) - 1
+
+    while idx >= 0:
+        arg = varlist[idx]
+
+        if varstrings.is_variable(arg) or varstrings.contains_variable(arg):
+            varname = varstrings.get_varname(arg)
+
+            if varname in varstrings.IGNORED_ONEPART_VARIABLES:
+                varlist.pop(idx)
+            elif varname in varstrings.IGNORED_TWOPART_VARIABLES:
+                if idx < 1:
+                    raise IndexError("Tried to delete ignored twopart variable {} from list {} but there is no arg in front of it to delete".format(varname, varlist))
+                varlist.pop(idx)
+                varlist.pop(idx - 1)
+                # Reduce idx an extra time so we skip both the places where we
+                # deleted an argument
+                idx -= 1
+        idx -= 1
 

@@ -1,9 +1,13 @@
 
 import json
 import os
+import hashlib
 from json.decoder import JSONDecodeError
-from nydus.client import validity
+from nydus.common import validity
+from nydus.common.MCAccount import MCAccount
 from nydus.client import utils
+from nydus.client import varstrings
+from nydus.client.DownloadFile import DownloadFile
 from nydus.client.JavaRuntime import JavaRuntime
 
 # Top level keys, used to decide which method should process each piece of the version file's top dictionary
@@ -197,6 +201,20 @@ class JSONVersion:
 
     def get_user_type(self):
         return self.user_type
+
+    def get_natives_dir(self):
+        # The natives dir used by the official MC launcher is
+        # .minecraft/bin/<some-hash>
+        # with a different hash for each version.
+        # I can't figure out what string is hashed to get that directory,
+        # so we're making our own.
+        hashclass = hashlib.sha1()
+        version_bytes = self.version.encode("utf-8")
+
+        hashclass.update(version_bytes)
+        version_hash = hashclass.hexdigest()
+        natives_dir = os.path.join(utils.get_minecraft_path(), "bin", version_hash)
+        return natives_dir
 
     """
     Called at the end of instantiation to make sure none of the data is
@@ -727,7 +745,14 @@ class JSONVersion:
         # In the first case, the variable is a seperate argument tothe name of the data it provides.
         # In the second case, the name and variable are both contained in one argument to the process.
         # We need to search for and replace both kinds.
+
+        # First we delete the variables that are to be ignored
+        varstrings.remove_ignored_variables_from_list(self.game_args)
+        varstrings.remove_ignored_variables_from_list(self.jvm_args)
+
+        # Then we expand the variables that are to be used
         pass
+
 
     """
     Checks that all the data is complete enough to create a launch command with.
