@@ -121,6 +121,20 @@ class JSONFileStore:
 # information is only brought in when downloading the files
 # and forming the launch command.
 
+# The json at ~/.minecraft/versions/version_manifest_v2.json has info on how to
+# download the version json for each Minecraft version. If the desired version json
+# were missing (when using from_version), we theoretically could
+# look it up and try to download any missing version files.
+# We don't, in part to emphasise that you should use the Minecraft launcher to set
+# up before using the Nydus Launcher, and in part because each version also requires
+# a jar file that's not in the version json and we don't know how to download;
+# you have to use the Minecraft launcher anyway to make sure you get that one.
+
+# It seems version_manifest_v2.json is downloaded from
+# https://launchermeta.mojang.com/mc/game/version_manifest_v2.json
+
+
+
 class JSONVersion:
 
     """
@@ -239,6 +253,18 @@ class JSONVersion:
         return natives_dir
 
     """
+    There is usually a jar file in the same place as the json file
+    which tells us everything about the current version.
+    If so, we probably need to include it in our set of jars.
+    This function returns a string, the path to that primary
+    jar file.
+    Usually of the form
+    /home/<username>/.minecraft/versions/<version>/<version>.jar
+    """
+    def get_main_jar_file(self):
+        return os.path.join(utils.get_minecraft_path(), "versions", self.id, "{}.jar".format(self.id))
+
+    """
     Called at the end of instantiation to make sure none of the data is
     broken in unfixable ways.
     This is not the check that the data is complete enough to launch Minecraft
@@ -261,6 +287,9 @@ class JSONVersion:
             raise ValueError("Must provide valid Minecraft version to JSONVersion.from_version. Was given {}".format(version))
         
         json_file = os.path.join(utils.get_minecraft_path(), "versions", version, "{}.json".format(version))
+
+        if not os.path.isfile(json_file):
+            raise FileNotFoundError("Version json file {} does not exist. Have you made sure to download the necessary materials with the Minecraft launcher before using the Nydus launcher?".format(json_file))
 
         with open(json_file, "r") as f:
             try:
@@ -756,6 +785,7 @@ class JSONVersion:
         else:
             raise TypeError("Attempted to download log_config but object was '{}' instead of a JSONFileStore".format(self.log_config))
 
+
     """
     Calculates the full contents of the classpath variable (colon-separated
     list of absolute paths to all the jarfiles).
@@ -764,6 +794,15 @@ class JSONVersion:
     def compute_classpath(self):
 
         abs_jarpaths = []
+
+        # There is a jar file ~/.minecraft/versions/<version>/<version>.jar
+        # which is not explicitly listed in the json, but it needed for Minecraft
+        # to launch.
+        # We add it to the list here, rather than when instantiating the class, so
+        # that it won't be inherited from ancestors.
+        main_jar_path = self.get_main_jar_file()
+        if os.path.isfile(main_jar_path):
+            self.jars.append(main_jar_path)
 
         for jar in self.jars:
             if os.path.isabs(jar):

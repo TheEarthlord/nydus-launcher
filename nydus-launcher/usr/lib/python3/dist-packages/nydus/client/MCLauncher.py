@@ -71,6 +71,12 @@ class MCLauncher:
         self.get_target_json_version().download_all()
 
     def launch(self):
+
         command = self.get_target_json_version().make_launch_command(self.mc_account)
 
+        # We want to run from inside the minecraft dir, which is self.game_dir
+        # so that logs end up in there, not dumped in random spots on the filesystem
         subprocess.run(command, cwd=utils.get_minecraft_path())
+
+        # subprocess.run should block until the process finishes. So we'll return when
+        # Minecraft is closed and we're ready to release the account.
