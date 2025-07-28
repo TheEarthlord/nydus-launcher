@@ -17,8 +17,6 @@ from nydus.client import nodupe
 from nydus.client import utils
 from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
-from nydus.client.log import log_client
-from nydus.client.log import restart_client_log
 from nydus.client.MCLauncher import MCLauncher
 from nydus.common.MCAccount import MCAccount
 from nydus.common import validity
@@ -115,7 +113,6 @@ def next_status_window():
     with STATUS_LOCK:
         if STATUS < len(STATUS_MESSAGES):
             next_msg = STATUS_MESSAGES[STATUS]
-            log_client(next_msg)
             STATUS += 1
             window_thread = threading.Thread(target=make_window, args=(next_msg,))
             window_thread.start()
@@ -310,13 +307,10 @@ def startup():
 def main():
     cfg = startup()
 
-    restart_client_log()
-
     try:
         client_main(cfg)
     except Exception:
         error_msg = traceback.format_exc()
-        log_client(error_msg)
         error_window(error_msg)
 
     # If the client crashes, we want to make sure we

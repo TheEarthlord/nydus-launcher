@@ -2,7 +2,6 @@
 import subprocess
 from nydus.client import utils
 from nydus.client.JSONVersion import JSONVersion
-from nydus.client.log import log_client
 from nydus.common import validity
 from nydus.common.MCAccount import MCAccount
 
@@ -78,7 +77,8 @@ class MCLauncher:
         command = self.get_target_json_version().make_launch_command(self.mc_account)
 
         command_string = " ".join(command)
-        log_client("Launching Minecraft with command: {}".format(command_string))
+        # If you run this from a terminal, it'll print the Minecraft launch command
+        print("Launching Minecraft with command: {}".format(command_string))
 
         # We want to run from inside the minecraft dir, which is self.game_dir
         # so that logs end up in there, not dumped in random spots on the filesystem
