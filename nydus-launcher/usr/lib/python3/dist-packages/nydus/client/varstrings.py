@@ -5,46 +5,6 @@
 VARNAME_START = "${"
 VARNAME_END = "}"
 
-PLAYERNAME_VAR = "auth_player_name"
-VERSION_VAR = "version_name"
-GAMEDIR_VAR = "game_directory"
-ASSETROOT_VAR = "assets_root"
-ASSETINDEX_VAR = "assets_index_name"
-UUID_VAR = "auth_uuid"
-ACCESSTOKEN_VAR = "auth_access_token"
-USERTYPE_VAR = "user_type"
-VERSTIONTYPE_VAR = "version_type"
-NATIVESDIR_VAR = "natives_directory"
-LAUNCHERNAME_VAR = "launcher_name"
-LAUNCHERVERSION_VAR = "launcher_version"
-CLASSPATH_VAR = "classpath"
-
-# Not sure why this varname is so generic, but
-# it's the log configuration file path
-LOGCONFIG_VAR = "path",
-
-CLIENTID_VAR = "clientid"
-XUID_VAR = "xuid"
-
-# These are the variables which we replace with actual values
-# using the data in the JSONVersion instance.
-USED_VARIABLES = [
-    PLAYERNAME_VAR,
-    VERSION_VAR,
-    GAMEDIR_VAR,
-    ASSETROOT_VAR,
-    ASSETINDEX_VAR,
-    UUID_VAR,
-    ACCESSTOKEN_VAR,
-    USERTYPE_VAR,
-    VERSTIONTYPE_VAR,
-    NATIVESDIR_VAR,
-    LAUNCHERNAME_VAR,
-    LAUNCHERVERSION_VAR,
-    CLASSPATH_VAR,
-    LOGCONFIG_VAR,
-]
-
 # These are the variables in the version JSON which we will
 # remove, along with their invoking arguments, if they appear
 # at all. We don't know how to get their actual values and
@@ -56,6 +16,10 @@ USED_VARIABLES = [
 # "--clientId", "${clientid}"
 # Both the arg containing the varname and the preceeding one
 # need to be deleted from the list.
+
+CLIENTID_VAR = "clientid"
+XUID_VAR = "xuid"
+
 IGNORED_TWOPART_VARIABLES = [
     CLIENTID_VAR,
     XUID_VAR,
@@ -170,7 +134,7 @@ Returns nothing; the list is modified in-place.
 def remove_ignored_variables_from_list(varlist):
 
     if not isinstance(varlist, list):
-        raise TypeError("varstrings.remove_ignored_variables_from_list expects a list as input; got {}".format(type(varlist)))
+        raise TypeError("remove_ignored_variables_from_list expects a list as input; got {}".format(type(varlist)))
     
     # We iterate backwards because that makes it much easier to deal with
     # ignored variables that have a preceeding argument attached
@@ -194,4 +158,35 @@ def remove_ignored_variables_from_list(varlist):
                 # deleted an argument
                 idx -= 1
         idx -= 1
+
+"""
+arglist: list of strings, possibly including some variables in those arg strings
+funcdict: dictionary. Keys are variable names (string), values are function/method
+    pointers which require no arguments and when called return the current value of
+    the corresponding variable (as a string).
+This function accepts a list of strings which may contain variable names, and a
+dictionary defining how to get each variable's value. It replaces all variable
+instances in the list with their values.
+Returns nothing. The list is modified in-place.
+"""
+def replace_variables_in_list(arglist, funcdict):
+
+    if not isinstance(arglist, list):
+        raise TypeError("Expected a list of args as first argument to replace_variables_in_list. Instead, got {}".format(type(arglist)))
+
+    if not isinstance(funcdict, dict):
+        raise TypeError("Expected a dictionary of varname: varfunction pairs as second argument to replace_variables_in_list. Instead, got {}".format(type(funcdict)))
+
+    for idx in range(len(arglist)):
+        arg = arglist[idx]
+        if is_variable(arg) or contains_variable(arg):
+            varname = get_varname(arg)
+            varfunc = funcdict.get(varname)
+            if not varfunc:
+                raise ValueError("Found variable name {} in argument {} but there was no function to compute the variable's true value".format(varname, arg))
+
+            value = varfunc()
+
+            newarg = replace_varname(arg, value)
+            arglist[idx] = newarg
 
