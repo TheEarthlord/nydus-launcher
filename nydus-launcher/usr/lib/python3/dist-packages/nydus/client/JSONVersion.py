@@ -67,7 +67,7 @@ LAUNCHERVERSION_VAR = "launcher_version"
 CLASSPATH_VAR = "classpath"
 # Not sure why this varname is so generic, but
 # it's the log configuration file path
-LOGCONFIG_VAR = "path",
+LOGCONFIG_VAR = "path"
 
 # Class used as a temporary store for data about
 # files which may need to be downloaded in the
@@ -245,7 +245,7 @@ class JSONVersion:
         # I can't figure out what string is hashed to get that directory,
         # so we're making our own.
         hashclass = hashlib.sha1()
-        version_bytes = self.version.encode("utf-8")
+        version_bytes = self.id.encode("utf-8")
 
         hashclass.update(version_bytes)
         version_hash = hashclass.hexdigest()
@@ -325,7 +325,9 @@ class JSONVersion:
             elif key == TYPE_KEY:
                 self.read_type(value)
             else:
-                raise ValueError("Unrecognised key in version json top level: {}".format(key))
+                # No processing for this key
+                # There are some keys we don't want to look at, so we don't raise any errors.
+                pass
 
     """
     argjson: contents under the key "arguments" in a version json.
@@ -367,7 +369,7 @@ class JSONVersion:
             raise TypeError("JSONVersion expected a list under key 'jvm' under key 'arguments' but got a {}".format(type(jvmjson)))
 
         new_args = JSONVersion.read_arglist(jvmjson)
-        self.jvm_extend(new_args)
+        self.jvm_args.extend(new_args)
 
     """
     assetjson: contents under the key "assetIndex" in a version json.
@@ -454,7 +456,7 @@ class JSONVersion:
 
         if RULES_KEY in jarjson:
             ruleslist = jarjson[RULES_KEY]
-            resolution = self.resolve_rule(ruleslist)
+            resolution = JSONVersion.resolve_rule(ruleslist)
             if not resolution:
                 return
 
@@ -465,18 +467,18 @@ class JSONVersion:
 
             artdict = downdict.get(ARTIFACT_KEY)
 
-            if not isinstance(artifact_dict, dict):
-                raise KeyError("Expected key '{}' under key '{}' i a jar's info json to contain a dictionary, but got {}".format(ARTIFACT_KEY, DOWNLOADS_KEY, type(artifact_dict)))
+            if not isinstance(artdict, dict):
+                raise KeyError("Expected key '{}' under key '{}' i a jar's info json to contain a dictionary, but got {}".format(ARTIFACT_KEY, DOWNLOADS_KEY, type(artdict)))
 
-            jar_path = artifact_dict.get(PATH_KEY)
-            if not jar_name:
+            jar_path = artdict.get(PATH_KEY)
+            if not jar_path:
                 raise KeyError("Expected jar path under key {} but key did not exist".format(PATH_KEY))
 
-            jar_hash = artifact_dict.get(SHA1_KEY)
+            jar_hash = artdict.get(SHA1_KEY)
             if not jar_hash:
                 raise KeyError("Expected jar hash under key {} but key did not exist".format(SHA1_KEY))
 
-            jar_url = artifact_dict.get(URL_KEY)
+            jar_url = artdict.get(URL_KEY)
             if not jar_url:
                 raise KeyError("Expected jar url under key {} but key did not exist".format(URL_KEY))
 
@@ -552,7 +554,7 @@ class JSONVersion:
     """
     def read_type(self, typejson):
         if validity.is_nonempty_str(typejson):
-            self.type = typejson
+            self.version_type = typejson
         else:
             raise ValueError("JSONVersion expected a string under the key 'type', but got '{}' of type {}".format(typejson, type(typejson)))
 
@@ -596,7 +598,7 @@ class JSONVersion:
 
                     while True:
                         if len(rule_obj) > 1:
-                            rkey = rule_obj.keys()[0]
+                            rkey = list(rule_obj.keys())[0]
                             rval = rule_obj[rkey]
 
                             wval = wanted_obj.get(rkey)
@@ -795,19 +797,9 @@ class JSONVersion:
 
         abs_jarpaths = []
 
-        # There is a jar file ~/.minecraft/versions/<version>/<version>.jar
-        # which is not explicitly listed in the json, but it needed for Minecraft
-        # to launch.
-        # We add it to the list here, rather than when instantiating the class, so
-        # that it won't be inherited from ancestors.
-        main_jar_path = self.get_main_jar_file()
-        if os.path.isfile(main_jar_path):
-            self.jars.append(main_jar_path)
 
         for jar in self.jars:
-            if os.path.isabs(jar):
-                abs_jarpath.append(jar)
-            elif isinstance(jar, str):
+            if isinstance(jar, str):
                 # The file did not provide download information; we have to
                 # infer its path using only its name.
                 # Files without download information usually form their name
@@ -838,7 +830,16 @@ class JSONVersion:
                 df = DownloadFile(url, sha1, name=fname)
                 abs_jarpaths.append(df.get_fullpath())
 
-        classpath = CPJAR_SEPARATOR.join(abs_jarpath)
+        # There is a jar file ~/.minecraft/versions/<version>/<version>.jar
+        # which is not explicitly listed in the json, but it needed for Minecraft
+        # to launch.
+        # We add it to the list here, rather than when instantiating the class, so
+        # that it won't be inherited from ancestors.
+        main_jar_path = self.get_main_jar_file()
+        if os.path.isfile(main_jar_path):
+            abs_jarpaths.append(main_jar_path)
+
+        classpath = CPJAR_SEPARATOR.join(abs_jarpaths)
         return classpath
 
     """
@@ -907,7 +908,7 @@ class JSONVersion:
 
             value = varfunc()
 
-            newarg = replace_varname(self.log_config_arg, value)
+            newarg = varstrings.replace_varname(self.log_config_arg, value)
             self.log_config_arg = newarg
 
     """

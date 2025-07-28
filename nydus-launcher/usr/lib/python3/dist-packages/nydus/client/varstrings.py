@@ -18,7 +18,7 @@ VARNAME_END = "}"
 # need to be deleted from the list.
 
 CLIENTID_VAR = "clientid"
-XUID_VAR = "xuid"
+XUID_VAR = "auth_xuid"
 
 IGNORED_TWOPART_VARIABLES = [
     CLIENTID_VAR,
@@ -75,9 +75,9 @@ def contains_variable(arg):
             prepart = arg[:nstart - 1]
 
             # Changing nstart to the index after the end
-            # the VARSTART, rather than the index of the
+            # the VARNAME_START, rather than the index of the
             # beginning
-            nstart += len(VARSTART)
+            nstart += len(VARNAME_START)
             middle = arg[nstart:nend]
             
             # We want the variable name and part before
@@ -106,7 +106,7 @@ def get_varname(arg):
 arg: string, an argument containing a variable or which is a variable
     according to is_variable or contains_variable
 newval: string, a value which will be placed where the variable was in
-    the argument, including removal of VARSTART and VAREND
+    the argument, including removal of VARNAME_START and VARNAME_END
 Returns the arg with newval placed where the variable was.
 If no variable can be found or newval is not a string, return empty string.
 """
@@ -144,12 +144,12 @@ def remove_ignored_variables_from_list(varlist):
     while idx >= 0:
         arg = varlist[idx]
 
-        if varstrings.is_variable(arg) or varstrings.contains_variable(arg):
-            varname = varstrings.get_varname(arg)
+        if is_variable(arg) or contains_variable(arg):
+            varname = get_varname(arg)
 
-            if varname in varstrings.IGNORED_ONEPART_VARIABLES:
+            if varname in IGNORED_ONEPART_VARIABLES:
                 varlist.pop(idx)
-            elif varname in varstrings.IGNORED_TWOPART_VARIABLES:
+            elif varname in IGNORED_TWOPART_VARIABLES:
                 if idx < 1:
                     raise IndexError("Tried to delete ignored twopart variable {} from list {} but there is no arg in front of it to delete".format(varname, varlist))
                 varlist.pop(idx)

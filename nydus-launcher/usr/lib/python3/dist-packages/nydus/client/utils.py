@@ -126,7 +126,7 @@ Gets path to the current user's Minecraft log config folder
 Raises OSError if it can't be found.
 """
 def get_minecraft_log_config_dir():
-    assets_path = get_minecraft_assets_path
+    assets_path = get_minecraft_assets_path()
     log_cdir = os.path.join(assets_path, "log_configs")
 
     if not os.path.isdir(log_cdir):

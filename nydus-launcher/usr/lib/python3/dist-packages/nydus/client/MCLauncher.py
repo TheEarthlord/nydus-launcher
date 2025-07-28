@@ -1,4 +1,6 @@
 
+import subprocess
+from nydus.client import utils
 from nydus.client.JSONVersion import JSONVersion
 from nydus.common import validity
 from nydus.common.MCAccount import MCAccount
