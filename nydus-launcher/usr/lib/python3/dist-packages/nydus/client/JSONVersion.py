@@ -1,14 +1,19 @@
 
+import hashlib
 import json
 import os
-import hashlib
+import re
 from json.decoder import JSONDecodeError
 from nydus.common import validity
+from nydus.common import nydus_info
 from nydus.common.MCAccount import MCAccount
 from nydus.client import utils
 from nydus.client import varstrings
 from nydus.client.DownloadFile import DownloadFile
 from nydus.client.JavaRuntime import JavaRuntime
+
+CPJAR_SEPARATOR = ":"
+JAR_NAMEPATH_SEPARATOR = ":"
 
 # Top level keys, used to decide which method should process each piece of the version file's top dictionary
 ARGUMENTS_KEY = "arguments"
@@ -46,6 +51,24 @@ USERNAME_ARG = "--username"
 UUID_ARG = "--uuid"
 ACCESSTOKEN_ARG = "--accessToken"
 
+# These are the variables which we replace with actual values
+# using the data in the JSONVersion instance.
+PLAYERNAME_VAR = "auth_player_name"
+VERSION_VAR = "version_name"
+GAMEDIR_VAR = "game_directory"
+ASSETROOT_VAR = "assets_root"
+ASSETINDEX_VAR = "assets_index_name"
+UUID_VAR = "auth_uuid"
+ACCESSTOKEN_VAR = "auth_access_token"
+USERTYPE_VAR = "user_type"
+VERSTIONTYPE_VAR = "version_type"
+NATIVESDIR_VAR = "natives_directory"
+LAUNCHERNAME_VAR = "launcher_name"
+LAUNCHERVERSION_VAR = "launcher_version"
+CLASSPATH_VAR = "classpath"
+# Not sure why this varname is so generic, but
+# it's the log configuration file path
+LOGCONFIG_VAR = "path",
 
 # Class used as a temporary store for data about
 # files which may need to be downloaded in the
@@ -434,6 +457,9 @@ class JSONVersion:
             self.jars.append(jar_store)
 
         # If no download information, just store the name as a string
+        # Note, from observation, this name is a colon-separated path under 'libraries' to a directory
+        # It does not end in '.jar'; we just need to add all the jarfiles we find inside
+        # the indicated directory.
         else:
             jar_name = jarjson.get(NAME_KEY)
             if validity.is_nonempty_str(jar_name):
@@ -665,7 +691,7 @@ class JSONVersion:
 
     def download_asset_index(self):
         if isinstance(self.asset_index, JSONFileStore):
-            fpath = utils.get_asset_index_path(self.asset_index.get_id())
+            fpath = utils.get_asset_index_path(self.asset_index.get_name())
             dirpath = os.path.dirname(fpath)
             fname = os.path.basename(fpath)
 
@@ -691,12 +717,16 @@ class JSONVersion:
     def download_jars(self):
         for jarfile in self.jars:
             if isinstance(jarfile, str):
-                # Nothing to download
-                pass
+                # Nothing to download, but we need to check the directory exists
+                name_parts = re.split(JAR_NAMEPATH_SEPARATOR, jarfile)
+                dirpath = os.path.join(utils.get_minecraft_libraries_path(), *name_parts)
+                if not os.path.isdir(dirpath):
+                    raise FileNotFoundError("No directory at {} to get undownloadable required jar files for JSONVersion".format(dirpath))
+
             elif isinstance(jarfile, JSONFileStore):
                 # If a JSONFileStore was used, the file
                 # had a path which was stored as the id
-                path = jarfile.get_id()
+                path = jarfile.get_name()
                 url = jarfile.get_url()
                 sha1 = jarfile.get_sha1()
 
@@ -714,7 +744,7 @@ class JSONVersion:
     def download_log_config(self):
         if isinstance(self.log_config, JSONFileStore):
             dirpath = utils.get_minecraft_log_config_dir()
-            fname = self.log_config.get_id()
+            fname = self.log_config.get_name()
 
             df = DownloadFile(
                 self.log_config.get_url(),
@@ -728,6 +758,62 @@ class JSONVersion:
             raise TypeError("Attempted to download log_config but object was '{}' instead of a JSONFileStore".format(self.log_config))
 
     """
+    Calculates the full contents of the classpath variable (colon-separated
+    list of absolute paths to all the jarfiles).
+    Returns the result as a string.
+    """
+    def compute_classpath(self):
+
+        abs_jarpaths = []
+
+        for jar in self.jars:
+            if os.path.isabs(jar):
+                abs_jarpath.append(jar)
+            elif isinstance(jar, str):
+                # The file did not provide download information; we have to
+                # infer its path using only its name.
+                # Files without download information usually form their name
+                # using their path under 'libraries' colon-separated.
+                # The name only contains a path to a directory; we need to add all
+                # the jarfiles inside that directory to our classpath.
+
+                name_parts = re.split(JAR_NAMEPATH_SEPARATOR, jar)
+                dirpath = os.path.join(utils.get_minecraft_libraries_path(), *name_parts)
+                contents = os.listdir(dirpath)
+                for name in contents:
+                    fullpath = os.path.join(dirpath, name)
+                    if name.endswith(".jar") and os.path.isfile(fullpath):
+                        abs_jarpaths.append(fullpath)
+
+            elif isinstance(jar, JSONFileStore):
+                # The file provided download information and we can use
+                # the DownloadFile class to infer its path.
+                path = jar.get_name()
+                url = jar.get_url()
+                sha1 = jar.get_sha1()
+
+                fname = os.path.basename(path)
+
+                # The DownloadFile class, if not given a path to put the file under,
+                # assumes it's a jar which belongs under 'libraries' and uses the
+                # url to figure the rest of the path out.
+                df = DownloadFile(url, sha1, name=fname)
+                abs_jarpaths.append(df.get_fullpath())
+
+        classpath = CPJAR_SEPARATOR.join(abs_jarpath)
+        return classpath
+
+    """
+    Calculates the full path to the log config xml file
+    using the JSONVersion's instance data.
+    Returns the result as a string.
+    """
+    def compute_log_path(self):
+        dirpath = utils.get_minecraft_log_config_dir()
+        fname = self.log_config.get_name()
+        return os.path.join(dirpath, fname)
+
+    """
     mc_account: an instance of MCAccount
     Many parts of the Minecraft version data involve variables, identifiable by the form "${varname}".
     This method expands all such variables in this instance's data to their real values. Therefore,
@@ -737,6 +823,27 @@ class JSONVersion:
     A Minecraft account must be provided because some of the variables are username, access token, etc.
     """
     def replace_variables(self, mc_account):
+
+        # Dicts which tells us, for each variable name, the method
+        # that gets its value. We have to define the dict here
+        # because some of the methods are on the current JSONVersion
+        # dict.
+        REPLACE_VARNAMES = {
+            PLAYERNAME_VAR: mc_account.get_username,
+            VERSION_VAR: self.get_id,
+            GAMEDIR_VAR: utils.get_minecraft_path,
+            ASSETROOT_VAR: utils.get_minecraft_assets_path,
+            ASSETINDEX_VAR: self.asset_index.get_name,
+            UUID_VAR: mc_account.get_uuid,
+            ACCESSTOKEN_VAR: mc_account.get_token,
+            USERTYPE_VAR: self.get_user_type,
+            VERSTIONTYPE_VAR: self.get_version_type,
+            NATIVESDIR_VAR: self.get_natives_dir,
+            LAUNCHERNAME_VAR: nydus_info.get_launcher_name,
+            LAUNCHERVERSION_VAR: nydus_info.get_launcher_version,
+            CLASSPATH_VAR: self.compute_classpath,
+            LOGCONFIG_VAR: self.compute_log_path,
+        }
 
         # There are two kinds of variables in the data;
         # "argname" "${varname}"
@@ -751,8 +858,19 @@ class JSONVersion:
         varstrings.remove_ignored_variables_from_list(self.jvm_args)
 
         # Then we expand the variables that are to be used
-        pass
+        varstrings.replace_variables_in_list(self.game_args, REPLACE_VARNAMES)
+        varstrings.replace_variables_in_list(self.jvm_args, REPLACE_VARNAMES)
 
+        if varstrings.is_variable(self.log_config_arg) or varstrings.contains_variable(self.log_config_arg):
+            varname = varstrings.get_varname(self.log_config_arg)
+            varfunc = REPLACE_VARNAMES.get(varname)
+            if not varfunc:
+                raise ValueError("Found variable name {} in argument {} but there was no function to compute the variable's true value".format(varname, self.log_config_arg))
+
+            value = varfunc()
+
+            newarg = replace_varname(self.log_config_arg, value)
+            self.log_config_arg = newarg
 
     """
     Checks that all the data is complete enough to create a launch command with.
