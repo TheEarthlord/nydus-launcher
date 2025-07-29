@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 
 from nydus.client.JSONVersion import *
 
