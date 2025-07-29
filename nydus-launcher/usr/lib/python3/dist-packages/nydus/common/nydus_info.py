@@ -22,7 +22,7 @@ If the version was not requested, it returns
 and allows the caller to proceed normally.
 """
 def request_version():
-    if len(sys.argv[1]) > 1:
+    if len(sys.argv) > 1:
         arg = sys.argv[1]
         if arg == get_version_arg():
             print(get_launcher_version())
