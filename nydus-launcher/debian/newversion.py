@@ -76,6 +76,7 @@ def main():
     if not os.path.isfile(info_path):
         print("Could not find nydus_info.py at {}".format(info_path))
         print("Are you running {} from the debian directory in Nydus Launcher source code?".format(script_name))
+        exit(1)
 
     info_contents = ""
     with open(info_path, "r") as f:
@@ -95,6 +96,7 @@ def main():
 
     if verline_idx >= len(info_contents):
         print("Found line index of version statement as {}, which exceeds the {} lines in {}".format(verline_idx, len(info_contents), info_path))
+        exit(1)
 
     verline = info_contents[verline_idx]
     verline_delim = '"'
@@ -109,6 +111,7 @@ def main():
 
     if verpart_idx == -1:
         print("Could not find valid Nydus Launcher version in line '{}'".format(verline))
+        exit(1)
 
     newversion = ""
     while not is_valid_version(newversion, 3):
