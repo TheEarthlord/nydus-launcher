@@ -15,7 +15,7 @@ class TestView(unittest.TestCase):
             f.write("")
             f.flush()
 
-        self.header = "client_ip,client_username,alloc_time,ms_username,msal_token,msal_expiry,xboxlive_token,xboxlive_expiry,xsts_token,xsts_expiry,xsts_hash,mc_token,mc_expiry,mc_username,mc_uuid"
+        self.header = "reserved,client_ip,client_username,alloc_time,ms_username,msal_token,msal_expiry,xboxlive_token,xboxlive_expiry,xsts_token,xsts_expiry,xsts_hash,mc_token,mc_expiry,mc_username,mc_uuid"
 
     def tearDown(self):
         os.remove(self.allocfile)
