@@ -153,6 +153,20 @@ class JSONVersion:
         self.game_args = []
         self.jvm_args = []
 
+        # jvm args which are hard coded into the launcher,
+        # observed from past Minecraft launches.
+        # We still need to find most of our jvm args by reading
+        # version json though.
+        self.jvm_args += [
+            "-Xmx2G",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UseG1GC",
+            "-XX:G1NewSizePercent=20",
+            "-XX:G1ReservePercent=20",
+            "-XX:MaxGCPauseMillis=50",
+            "-XX:G1HeapRegionSize=32M"
+        ]
+
         # Holds a JSONFileStore to keep the data we need to know
         # for file download and launch
         self.asset_index = None
