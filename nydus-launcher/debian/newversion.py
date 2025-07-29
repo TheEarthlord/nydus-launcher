@@ -9,6 +9,23 @@ import sys
 # the nydus_info.py code file in the nydus-common package,
 # and the changelog in the debian directory (right here).
 
+def is_integer(num):
+
+    if not isinstance(num, str):
+        return False
+
+    # If the number is negative we need to remove the minus first
+    if len(num) > 0 and num[0] == "-":
+        num = num[1:]
+
+    if not num.isdecimal():
+        return False
+    try:
+        num = int(num)
+    except:
+        return False
+    return True
+
 def is_nonempty_str(mystr):
     if not isinstance(mystr, str):
         return False
@@ -96,7 +113,7 @@ def main():
     newversion = ""
     while not is_valid_version(newversion, 3):
         print("A valid version is of the form X.Y.Z where X, Y, and Z are nonnegative integers.")
-        newversion = input("What would you like the new version to be?")
+        newversion = input("What would you like the new version to be? ")
 
     verline_parts[verpart_idx] = newversion
     new_verline = verline_delim.join(verline_parts)
@@ -106,7 +123,19 @@ def main():
         for line in info_contents:
             f.write(line)
 
-    subprocess.run("/usr/bin/dch", "-v", newversion, "--distribution", "jammy")
+    # For dch to work properly, you need DEBEMAIL and DEBFULLNAME
+    # to be environment variables set in your environment, containing
+    # the email address and full name you want attached to the new
+    # version entry in the changelog file.
+
+    # You can accomplish this by running
+    # DEBEMAIL="<email address>"
+    # DEBFULLNAME="<full name>"
+    # export DEBEMAIL
+    # export DEBFULLNAME
+    # But it's easiest to just add them to your bashrc or something like that.
+
+    subprocess.run(["/usr/bin/dch", "-v", newversion, "--distribution", "jammy"])
 
 if __name__ == "__main__":
     main()
