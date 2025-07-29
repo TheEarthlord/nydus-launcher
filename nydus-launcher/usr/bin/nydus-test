@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from nydus.test.client.JSONVersion import *
 from nydus.test.client.utils import *
 from nydus.test.common.validity import *
 from nydus.test.server.alloc import *
