@@ -2,6 +2,7 @@
 
 import sys
 from nydus.cli.CliConfig import CliConfig
+from nydus.common import nydus_info
 from nydus.common import validity
 from nydus.server.allocater import AllocEngine
 from nydus.server import alloc_utils
@@ -225,6 +226,9 @@ def startup():
     return cfg
 
 def main():
+    
+    nydus_info.request_version()
+
     cfg = startup()
     cli_main(cfg)
 

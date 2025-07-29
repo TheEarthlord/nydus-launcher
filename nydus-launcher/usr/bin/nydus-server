@@ -7,6 +7,7 @@ import ssl
 import time
 import threading
 import traceback
+from nydus.common import nydus_info
 from nydus.common import validity
 from nydus.common.MCAccount import MCAccount
 from nydus.server import alloc_utils
@@ -195,6 +196,9 @@ def server_main(cfg, app):
         time.sleep(CLEANUP_PERIOD)
 
 def main():
+
+    nydus_info.request_version()
+
     restart_server_log()
 
     try:

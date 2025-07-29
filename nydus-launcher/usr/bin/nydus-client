@@ -19,6 +19,7 @@ from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
 from nydus.client.MCLauncher import MCLauncher
 from nydus.common.MCAccount import MCAccount
+from nydus.common import nydus_info
 from nydus.common import validity
 
 MAXMSG = 1024
@@ -305,6 +306,9 @@ def startup():
     return cfg
 
 def main():
+    
+    nydus_info.request_version()
+
     cfg = startup()
 
     try:
