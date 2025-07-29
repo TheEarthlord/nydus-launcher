@@ -1,4 +1,5 @@
 usr/bin/nydus-test
+usr/lib/python3/dist-packages/nydus/test/client/JSONVersion.py
 usr/lib/python3/dist-packages/nydus/test/client/utils.py
 usr/lib/python3/dist-packages/nydus/test/common/validity.py
 usr/lib/python3/dist-packages/nydus/test/server/alloc.py

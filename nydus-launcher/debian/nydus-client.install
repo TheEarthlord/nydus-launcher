@@ -3,10 +3,12 @@ usr/bin/nydus-client
 usr/lib/python3/dist-packages/nydus/client/ClientConfig.py
 usr/lib/python3/dist-packages/nydus/client/DownloadFile.py
 usr/lib/python3/dist-packages/nydus/client/JavaRuntime.py
-usr/lib/python3/dist-packages/nydus/client/MCVersion.py
-usr/lib/python3/dist-packages/nydus/client/StatusMsg.py
-usr/lib/python3/dist-packages/nydus/client/utils.py
+usr/lib/python3/dist-packages/nydus/client/JSONVersion.py
+usr/lib/python3/dist-packages/nydus/client/MCLauncher.py
 usr/lib/python3/dist-packages/nydus/client/nodupe.py
+usr/lib/python3/dist-packages/nydus/client/StatusMsg.py
+usr/lib/python3/dist-packages/nydus/client/varstrings.py
+usr/lib/python3/dist-packages/nydus/client/utils.py
 usr/share/applications/nydus-client.desktop
 usr/share/icons/nydus-launcher/nydus-launcher.svg
 usr/share/man/man1/nydus-client.1
