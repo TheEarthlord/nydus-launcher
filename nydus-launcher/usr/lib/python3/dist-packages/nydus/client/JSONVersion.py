@@ -456,7 +456,7 @@ class JSONVersion:
 
         if RULES_KEY in jarjson:
             ruleslist = jarjson[RULES_KEY]
-            resolution = JSONVersion.resolve_rule(ruleslist)
+            resolution = JSONVersion.resolve_rulelist(ruleslist)
             if not resolution:
                 return
 
@@ -569,8 +569,24 @@ class JSONVersion:
     This method looks at the rule list and returns True if the corresponding
     element should be included, False if not.
     """
-    def resolve_rule(rulelist):
+    def resolve_rulelist(rulelist):
         
+        if not isinstance(rulelist, list):
+            raise TypeError("Contents of 'rules' key in version json should be a list; instead, got '{}' of type {}".format(rulelist, type(rulelist)))
+
+        for rule in rulelist:
+            if JSONVersion.resolve_rule(rule):
+                return True
+        return False
+
+    """
+    ruledict: a dictionary, one of the elements in the list of rules given to resolve_rulelist
+    This method is a helper called by resolve_rulelist to process individual rules.
+    Returns True if the rule indicates the element should be included
+    (it's an allow rule and the conditions are met); False otherwise.
+    """
+    def resolve_rule(ruledict):
+
         # If these are in the rule, the rule matches us
         wanted_elements = {
             "features": {
@@ -581,42 +597,45 @@ class JSONVersion:
             }
         }
 
-        if not isinstance(rulelist, list):
-            raise TypeError("Contents of 'rules' key in version json should be a list; instead, got '{}' of type {}".format(rulelist, type(rulelist)))
+        if not isinstance(ruledict, dict):
+            raise TypeError("Elements in the list under 'rules' key in version json should be dicts. Instead, got '{}' of type {}".format(ruledict, type(ruledict)))
 
-        for rule in rulelist:
-            for key in rule:
-                if key == ACTION_KEY:
-                    is_allow = (key == ALLOW_ACTION)
-                else:
-                    # Check that the data structure in the rule
-                    # is present in the desired_elements dict
-                    # If so, it passes.
+        is_allow = False
+        structure_matches = False
 
-                    rule_obj = rule
-                    wanted_obj = wanted_elements
+        for key in ruledict:
+            if key == ACTION_KEY:
+                action_type = ruledict[key]
+                is_allow = (action_type == ALLOW_ACTION)
+            else:
+                # Check that the data structure in the rule
+                # is present in the desired_elements dict
+                # If so, it passes.
 
-                    while True:
-                        if len(rule_obj) > 1:
-                            rkey = list(rule_obj.keys())[0]
-                            rval = rule_obj[rkey]
+                # Create a new copy of the rule dictionary which
+                # excludes action part, so we can focus only on the data contents
+                rule_obj = {key: ruledict[key]}
+                wanted_obj = wanted_elements
 
-                            wval = wanted_obj.get(rkey)
-                            if type(wval) == type(rval):
-                                if isinstance(wval, dict):
-                                    rule_obj = rval
-                                    wanted_obj = wval
-                                elif isinstance(wval, str):
-                                    if rval == wval:
-                                        # The rule has a structure matching the contents of the "wanted elements" dictionary,
-                                        # so the rule passes.
-                                        return True
-                                else:
-                                    break
-                            else:
-                                break
-                        else:
-                            break
+                proceeding = True
+                while proceeding:
+                    proceeding = False
+                    if len(rule_obj) > 0:
+                        rkey = list(rule_obj.keys())[0]
+                        rval = rule_obj[rkey]
+                        wval = wanted_obj.get(rkey)
+
+                        if type(wval) == type(rval):
+                            if isinstance(wval, dict):
+                                rule_obj = rval
+                                wanted_obj = wval
+                                proceeding = True
+                            elif isinstance(wval, str):
+                                if rval == wval:
+                                    structure_matches = True
+
+        if is_allow and structure_matches:
+            return True
         return False
 
 
@@ -638,7 +657,7 @@ class JSONVersion:
                 rules = elem.get(RULES_KEY)
                 if not isinstance(rules, list):
                     raise KeyError("JSONVersion expected a key 'rules' containing a list inside a dictionary about an argument, but there was not one. The dictionary: {}".format(elem))
-                rule_passed = JSONVersion.resolve_rule(rules)
+                rule_passed = JSONVersion.resolve_rulelist(rules)
                 if rule_passed:
                     values = elem.get(VALUE_KEY)
                     if values == None:

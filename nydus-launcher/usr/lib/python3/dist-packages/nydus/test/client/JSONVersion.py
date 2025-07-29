@@ -16,7 +16,7 @@ class TestResolveRule(unittest.TestCase):
             }
         ]
 
-        self.assertTrue(JSONVersion.resolve_rule(rules))
+        self.assertTrue(JSONVersion.resolve_rulelist(rules))
 
     def test_mac_no(self):
         rules = [
@@ -27,7 +27,7 @@ class TestResolveRule(unittest.TestCase):
                 }
             }
         ]
-        self.assertFalse(JSONVersion.resolve_rule(rules))
+        self.assertFalse(JSONVersion.resolve_rulelist(rules))
 
     def test_windows_no(self):
         rules = [
@@ -39,7 +39,7 @@ class TestResolveRule(unittest.TestCase):
             }
         ]
 
-        self.assertFalse(JSONVersion.resolve_rule(rules))
+        self.assertFalse(JSONVersion.resolve_rulelist(rules))
 
     def test_x86_yes(self):
         rules = [
@@ -50,7 +50,7 @@ class TestResolveRule(unittest.TestCase):
                 }
             }
         ]
-        self.assertTrue(JSONVersion.resolve_rule(rules))
+        self.assertTrue(JSONVersion.resolve_rulelist(rules))
 
 if __name__ == "__main__":
     unittest.main()
