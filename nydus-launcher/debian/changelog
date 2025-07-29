@@ -1,3 +1,9 @@
+nydus-launcher (2.2.2) jammy; urgency=medium
+
+  * Added --version arg to all executables.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 29 Jul 2025 17:47:05 +1000
+
 nydus-launcher (2.2.1) jammy; urgency=medium
 
   * Version update script works
