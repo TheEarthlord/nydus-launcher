@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import unittest
+
 from nydus.client.JSONVersion import *
 
 class TestResolveRule(unittest.TestCase):
