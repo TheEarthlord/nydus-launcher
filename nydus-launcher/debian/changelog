@@ -1,3 +1,9 @@
+nydus-launcher (2.2.3) jammy; urgency=medium
+
+  * Increased XSTS token max length.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Thu, 23 Apr 2026 14:52:07 +1000
+
 nydus-launcher (2.2.2) jammy; urgency=medium
 
   * Added --version arg to all executables.
