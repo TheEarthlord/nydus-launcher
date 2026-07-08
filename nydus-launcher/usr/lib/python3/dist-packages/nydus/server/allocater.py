@@ -71,7 +71,7 @@ ALLOC_DELIM = ","
 
 # How long an account allocation lasts before
 # it will be deleted
-ALLOC_TIMEOUT = datetime.timedelta(hours=2)
+ALLOC_TIMEOUT = datetime.timedelta(hours=9)
 
 FIELDS = [
     "reserved",

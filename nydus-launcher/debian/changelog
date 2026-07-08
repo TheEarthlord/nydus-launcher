@@ -1,3 +1,9 @@
+nydus-launcher (2.2.4) jammy; urgency=medium
+
+  * Increased account expiration timeout from 2 hours to 9 hours.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 08 Jul 2026 11:29:51 +1000
+
 nydus-launcher (2.2.3) jammy; urgency=medium
 
   * Increased XSTS token max length.
