@@ -14,12 +14,14 @@ BROWSERUID = "BrowserUid"
 MSALCID = "MSALClientId"
 ALLOCFILE = "AllocFile"
 ACCOUNTSFILE = "AccountsFile"
+ALLOCTIMEOUT = "AllocTimeout"
 SERVER_PARNAMES = [
     IPADDR, 
     PORT,
     CERTFILE,
     CERTPRIVKEY,
     MCVERSION,
+    ALLOCTIMEOUT,
     BROWSERUID,
     MSALCID,
     ALLOCFILE,
@@ -32,6 +34,7 @@ SERVER_DEFCONFIG = {
     CERTFILE: "/etc/nydus/nydus-server.crt",
     CERTPRIVKEY: "/etc/nydus/nydus-server.key",
     MCVERSION: "1.20.6",
+    ALLOCTIMEOUT: "9",
     BROWSERUID: "1000",
     MSALCID: "1ab23456-7890-1c2d-e3fg-45h6789ijk01",
     ALLOCFILE: "/etc/nydus/nydus-alloc.csv",
@@ -46,6 +49,7 @@ SERVER_VARNAMES = {
     CERTFILE: "cert_file",
     CERTPRIVKEY: "cert_privkey",
     MCVERSION: "mc_version",
+    ALLOCTIMEOUT: "alloc_timeout",
     BROWSERUID: "browser_uid",
     MSALCID: "msal_cid",
     ALLOCFILE: "alloc_file",
@@ -73,6 +77,9 @@ class ServerConfig(Config):
         if not validity.is_valid_minecraft_version(self.mc_version):
             raise ValueError("Value for {} is not a valid Minecraft version: {}".format(MCVERSION, self.mc_version))
 
+        if not validity.is_positive_integer(self.alloc_timeout):
+            raise ValueError("Value for {} is not a positive integer: {}".format(ALLOCTIMEOUT, self.alloc_timeout))
+
         if not validity.is_valid_system_uid(self.browser_uid):
             raise ValueError("Value for {} is not a valid system user ID number: {}".format(BROWSERUID, self.browser_uid))
 
@@ -84,6 +91,7 @@ class ServerConfig(Config):
 
         if not validity.is_valid_file(self.accounts_file):
             raise ValueError("Value for {} is not a file, cannot be found, or cannot be read: {}".format(ACCOUNTSFILE, self.accounts_file))
+
 
     def get_ip_addr(self):
         return self.ip_addr
@@ -102,6 +110,13 @@ class ServerConfig(Config):
 
     def get_mc_version(self):
         return self.mc_version
+
+    def get_alloc_timeout(self):
+        # Number of hours until account allocation expiry
+        # will need to be in integer form for most uses,
+        # but it'll be a string from reading the config
+        # file, so we convert it.
+        return int(self.alloc_timeout)
 
     def get_browser_uid(self):
         # UID needs to be in int form for most uses,

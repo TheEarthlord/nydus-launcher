@@ -150,7 +150,7 @@ def cleanup_helper(cfg, app):
     alloc_engine = AllocEngine(cfg.get_alloc_file())
 
     renewal_succeeded = renew_tokens(cfg, app, alloc_engine)
-    alloc_engine.release_expired()
+    alloc_engine.release_expired(cfg.get_alloc_timeout())
 
     # "Unused" accounts are detected by looking for users
     # logged in over SSH. This is a very case-specific way

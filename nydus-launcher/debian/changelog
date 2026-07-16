@@ -1,3 +1,10 @@
+nydus-launcher (2.3.0) jammy; urgency=medium
+
+  * Modified account allocation expiry timeout to be set as a nydus-server
+    configuration parameter rather than hard-coded in the program.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Thu, 16 Jul 2026 16:47:25 +1000
+
 nydus-launcher (2.2.4) jammy; urgency=medium
 
   * Increased account expiration timeout from 2 hours to 9 hours.

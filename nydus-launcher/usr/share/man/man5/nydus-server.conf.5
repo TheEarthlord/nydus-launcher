@@ -100,6 +100,15 @@ Special versions like OptiFine versions may be used here, provided
 the right version of OptiFine is installed on the client machine.
 .RE
 
+.SS AllocTimeout
+.RS 2
+After this many hours, an account allocation is considered 'expired',
+and will be released during the next cleanup regardless of whether
+.BR nydus-client
+has requested it be released. Must be a positive integer, so the minimum
+allocation timeout period is 1 hour.
+.RE
+
 .SS BrowserUid
 .RS 2
 In order for MSAL (Microsoft Authentication Libraries) to

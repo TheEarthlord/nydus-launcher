@@ -69,10 +69,6 @@ ALLOC_FILE = "nydus-alloc.csv"
 
 ALLOC_DELIM = ","
 
-# How long an account allocation lasts before
-# it will be deleted
-ALLOC_TIMEOUT = datetime.timedelta(hours=9)
-
 FIELDS = [
     "reserved",
     "client_ip",
@@ -411,18 +407,20 @@ class AllocAccount:
         self.aat.set_minecraft_account(new_mc_account)
 
     """
+    alloc_timeout: positive int, the number of hours after which an account
+        should be considered expired.
     Returns True if the account is allocated and has been allocated
     for longer than the alloc timeout.
     Otherwise, return False (including if the account is not allocated,
     or is reserved)
     """
-    def alloc_expired(self):
+    def alloc_expired(self, alloc_timeout):
 
         if self.is_reserved():
             return False
         now = datetime.datetime.now()
         if self.get_alloc_time():
-            if now - self.get_alloc_time() > ALLOC_TIMEOUT:
+            if now - self.get_alloc_time() > alloc_timeout:
                 return True
         return False
 
@@ -995,11 +993,12 @@ class AllocEngine:
         self.write_changes()
 
     """
+    alloc_timeout: positive int, number of hours before an account is considered expired.
     Releases all the accounts which are past their allocation timeout.
     """
-    def release_expired(self):
+    def release_expired(self, alloc_timeout):
         for acc in self.accounts:
-            if acc.alloc_expired() and not acc.is_reserved():
+            if acc.alloc_expired(alloc_timeout) and not acc.is_reserved():
                 result = acc.release()
                 if result:
                     log_server("Released account {}; allocation expired".format(\

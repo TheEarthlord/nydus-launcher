@@ -5,7 +5,7 @@ def get_launcher_name():
     return "nydus-launcher"
 
 def get_launcher_version():
-    return "2.2.4"
+    return "2.3.0"
 
 def get_version_arg():
     return "--version"
