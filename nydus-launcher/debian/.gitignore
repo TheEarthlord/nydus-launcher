@@ -1,7 +1,7 @@
 
 # Byproducts of building
 
-.debhelper
+*.debhelper
 debhelper-build-stamp
 nydus-server
 nydus-cli
@@ -10,5 +10,3 @@ nydus-common
 nydus-test
 files
 *.substvars
-nydus-client.postinst.debhelper
-nydus-client.postrm.debhelper
