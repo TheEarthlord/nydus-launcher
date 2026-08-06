@@ -11,7 +11,7 @@ from nydus.common import validity
 def get_runfile_path():
     sys_username = utils.get_username()
     runfile_name = "{}-nydus-client.pid".format(sys_username)
-    return os.path.join("/tmp", runfile_name)
+    return os.path.join("/run", runfile_name)
 
 def runfile_exists():
     return os.path.isfile(get_runfile_path())
