@@ -1,3 +1,9 @@
+nydus-launcher (2.3.1) jammy; urgency=medium
+
+  * Moved nydus-client pidfile from /tmp to /run
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Thu, 06 Aug 2026 17:43:32 +1000
+
 nydus-launcher (2.3.0) jammy; urgency=medium
 
   * Modified account allocation expiry timeout to be set as a nydus-server
