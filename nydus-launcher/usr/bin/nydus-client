@@ -245,29 +245,29 @@ def request(ssock):
 
 """
 To be run at the beginning of the program, before the server is
-contacted. Checks for a runfile, an indicator that a Nydus Client
+contacted. Checks for a pidfile, an indicator that a Nydus Client
 instance is already running for this user on this machine, and if
 one is present, exits immediately to avoid duplicate Minecraft
 instances.
 WARNING: This function will exit the whole program if the right conditions
 are met, without presenting an error message for the user.
 """
-def begin_runfile():
+def begin_pidfile():
     if nodupe.nydus_client_running():
         exit(0)
 
-    nodupe.make_runfile()
+    nodupe.make_pidfile()
 
 """
 To be run at the end of the program, after Minecraft is finished.
-Deletes the runfile.
+Deletes the pidfile.
 """
-def end_runfile():
-    nodupe.delete_runfile()
+def end_pidfile():
+    nodupe.delete_pidfile()
 
 def client_main(cfg):
 
-    begin_runfile()
+    begin_pidfile()
 
     context = ssl.create_default_context()
 
@@ -293,7 +293,7 @@ def client_main(cfg):
            
             release(ssock)
 
-    end_runfile()
+    end_pidfile()
 
 
 def startup():
@@ -313,8 +313,8 @@ def main():
         error_window(error_msg)
 
     # If the client crashes, we want to make sure we
-    # delete the runfile so it doesn't block future launches
-    if nodupe.runfile_exists():
-        end_runfile()
+    # delete the pidfile so it doesn't block future launches
+    if nodupe.pidfile_exists():
+        end_pidfile()
 
 main()

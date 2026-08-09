@@ -8,13 +8,13 @@ import os
 from nydus.client import utils
 from nydus.common import validity
 
-def get_runfile_path():
+def get_pidfile_path():
     sys_username = utils.get_username()
-    runfile_name = "{}-nydus-client.pid".format(sys_username)
-    return os.path.join("/run", runfile_name)
+    pidfile_name = "{}-nydus-client.pid".format(sys_username)
+    return os.path.join("/tmp", pidfile_name)
 
-def runfile_exists():
-    return os.path.isfile(get_runfile_path())
+def pidfile_exists():
+    return os.path.isfile(get_pidfile_path())
 
 """
 Returns True if we believe the Nydus Client is already running
@@ -23,27 +23,27 @@ False if not, and it's ok to start a new Nydus Client instance.
 """
 def nydus_client_running():
     # We declare the nydus client running if
-    # the runfile exists (/etc/nydus/<username>-nydus-client.pid)
-    # and the contents of the runfile is a valid pid
+    # the pidfile exists (/tmp/<username>-nydus-client.pid)
+    # and the contents of the pidfile is a valid pid
     # We can't easily check if there is a process with that pid
     # without additional libraries, so we don't bother.
 
-    rfname = get_runfile_path()
+    rfname = get_pidfile_path()
 
-    if runfile_exists():
-        contents = get_runfile_contents()
+    if pidfile_exists():
+        contents = get_pidfile_contents()
         if validity.is_positive_integer(contents):
             return True
     return False
 
 """
-If runfile currently exists, returns the
+If pidfile currently exists, returns the
 (whitespace-stripped) contents of the file as a string.
 If not, returns None.
 """
-def get_runfile_contents():
-    if runfile_exists():
-        rfname = get_runfile_path()
+def get_pidfile_contents():
+    if pidfile_exists():
+        rfname = get_pidfile_path()
 
         with open(rfname, "r") as f:
             contents = f.read()
@@ -52,27 +52,27 @@ def get_runfile_contents():
     return None
 
 
-def delete_runfile():
-    if runfile_exists():
-        rfname = get_runfile_path()
-        contents = get_runfile_contents()
+def delete_pidfile():
+    if pidfile_exists():
+        rfname = get_pidfile_path()
+        contents = get_pidfile_contents()
         if validity.is_positive_integer(contents):
             filepid = int(contents)
             mypid = os.getpid()
             if filepid != mypid:
-                raise ValueError("When trying to delete the runfile {}, the pid inside was {}, which does not match this Nydus Client's pid of {}".format(rfname, filepid, mypid))
+                raise ValueError("When trying to delete the pidfile {}, the pid inside was {}, which does not match this Nydus Client's pid of {}".format(rfname, filepid, mypid))
 
         else:
-            raise ValueError("When trying to delete the runfile {}, the contents was '{}', which is not a valid PID.".format(rfname, contents))
+            raise ValueError("When trying to delete the pidfile {}, the contents was '{}', which is not a valid PID.".format(rfname, contents))
 
         os.remove(rfname)
 
     else:
-        raise FileNotFoundError("Attempting to delete runfile {}, but it does not exist!")
+        raise FileNotFoundError("Attempting to delete pidfile {}, but it does not exist!")
 
-def make_runfile():
+def make_pidfile():
 
-    rfname = get_runfile_path()
+    rfname = get_pidfile_path()
     pid = os.getpid()
     
     with open(rfname, "w") as f:
