@@ -232,10 +232,6 @@ def request(ssock):
 
     mc_instance = MCLauncher(mc_version, mc_acc)
 
-
-    # Although launch() downloads all the files, we put a
-    # separate download step first so we can mark it out
-    # in the status window.
     mc_instance.download_all()
 
     next_status_window()
