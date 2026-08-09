@@ -129,8 +129,7 @@ def error_window(error_msg):
 
     # If we've hit an error, we're no longer in the normal
     # procession of status messages and should end them.
-    with STATUS_LOCK:
-        STATUS = len(STATUS_MESSAGES)
+    close_status_window()
 
     root = tk.Tk(className=WINDOW_TITLE)
     frame = ttk.Frame(root, padding=10)
@@ -316,6 +315,6 @@ def main():
     # If the client crashes, we want to make sure we
     # delete the runfile so it doesn't block future launches
     if nodupe.runfile_exists():
-        nodupe.end_runfile()
+        end_runfile()
 
 main()
