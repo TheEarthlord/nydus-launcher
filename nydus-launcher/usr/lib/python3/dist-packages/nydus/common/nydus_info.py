@@ -16,7 +16,7 @@ was given the 'show version' argument (the string
 returned by get_version_arg) in the first position.
 If so, it prints the current Nydus Launcher
 version and exits.
-This function access sys.argv, and will exit
+This function accesses sys.argv, and will exit
 the entire program if the version was requested.
 If the version was not requested, it returns
 and allows the caller to proceed normally.

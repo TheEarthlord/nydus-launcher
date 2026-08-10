@@ -45,13 +45,15 @@ MSG_END = "\n"
 # to launch. Needed because the function which watches new windows
 # needs to know the Minecraft version we're looking for, but Wnck doesn't
 # allow flexibility in what we pass to it.
+# We don't need a lock protecting this because we right to it only once, 
+# strictly before launching the callback function which reads from it.
 NUMERIC_VERSION = None
 
 DIAG_LOCK = threading.Lock()
 
 # Used to track which status dialog box we're up to
 # showing as we work through the process of launching Minecraft.
-# This is a global modified by several functions.
+# This is a global modified by several threads.
 # Always use the DIAG_LOCK when touching it.
 dialog_idx = 0
 
@@ -133,7 +135,6 @@ def show_error_dialog(error_diag):
     close_all_dialogs()
 
     win.show_all()
-    Gtk.main_iteration()
 
 
 """
@@ -159,7 +160,7 @@ def watch_for_minecraft(screen, window):
     title = window.get_name()
 
     if not NUMERIC_VERSION:
-        raise TypeError("Numeric Minecraft version should have been set before watching for the Minecraft window, but it was {}".format(NUMERIC_VERSION))
+        raise TypeError("Numeric Minecraft version should have been set before watching for the Minecraft window, but it was '{}'".format(NUMERIC_VERSION))
 
     if ("Minecraft" in title) and (NUMERIC_VERSION in title):
 
@@ -201,9 +202,8 @@ def show_timed_dialogs():
             if dialog_idx >= len(DIALOGS):
                 break
 
-            curr_diag = DIALOGS[dialog_idx]
-
             # Else proceed to next message.
+            curr_diag = DIALOGS[dialog_idx]
             curr_diag.show_all()
             if dialog_idx > 0:
                 DIALOGS[dialog_idx-1].close()
