@@ -6,17 +6,22 @@
 # Request an account from the server.
 # Launch Minecraft using those jars and account details.
 
+import gi
 import ssl
 import socket
 import threading
-import tkinter as tk
-from tkinter import ttk
 import traceback
 
+gi.require_version("Gtk", "3.0")
+gi.require_version("Wnck", "3.0")
+
+from gi.repository import Gtk
+from gi.repository import Wnck
 from nydus.client import nodupe
 from nydus.client import utils
-from nydus.client.StatusMsg import StatusMsg
 from nydus.client.ClientConfig import ClientConfig
+from nydus.client.ErrorDialog import ErrorDialog
+from nydus.client.InfoDialog import InfoDialog
 from nydus.client.MCLauncher import MCLauncher
 from nydus.common.MCAccount import MCAccount
 from nydus.common import nydus_info
@@ -36,117 +41,179 @@ NETENC="utf-8"
 
 MSG_END = "\n"
 
-WINDOW_TITLE = "Nydus Launcher"
 
-# Used for tracking where we're up to in launching
-# Minecraft, so we can display status message boxes
-STATUS_MESSAGES = [
-    StatusMsg(1, "Requesting Minecraft credentials from Server"),
-    StatusMsg(2, "Downloading files for Minecraft"),
-    StatusMsg(3, "Launching Minecraft"),
+DIAG_LOCK = threading.Lock()
+
+# Used to track which status dialog box we're up to
+# showing as we work through the process of launching Minecraft.
+# This is a global modified by several functions.
+# Always use the DIAG_LOCK when touching it.
+dialog_idx = 0
+
+# The list of status dialog boxes in order, displaying
+# stages in launching Minecraft.
+# Those with timeouts of 0 will persist until the program
+# reaches a new stage. The others swap out every few seconds
+# to reassure the user the program is still running, should
+# Minecraft take a while to appear on screen.
+# Always use the DIAG_LOCK when opening or closing one of these windows.
+DIALOGS = [
+    InfoDialog("Requesting Minecraft credentials from server...", timeout=0),
+    InfoDialog("Downloading files for Minecraft...", timeout=0),
+    InfoDialog("Launching Minecraft..."),
+    InfoDialog("Waiting for the grass to grow..."),
+    InfoDialog("Spreading lava..."),
+    InfoDialog("Making contact with the mothership..."),
+    InfoDialog("Eroding a cliff-face..."),
+    InfoDialog("The seconds are ticking by..."),
+    InfoDialog("Circumnavigating the globe..."),
+    InfoDialog("Crossing the desert on foot..."),
+    InfoDialog("Journeying to the centre of the earth..."),
+    InfoDialog("Watching trees grow..."),
+    InfoDialog("Waiting for the sermon to be over..."),
+    InfoDialog("Singing another chorus..."),
+    InfoDialog("Following Pluto's orbit..."),
+    InfoDialog("Stepping out of the time machine..."),
+    InfoDialog("The elves are fading away..."),
+    InfoDialog("Atlantis rises from the deeps..."),
+    InfoDialog("Watching the years slip by..."),
+    InfoDialog("Imminently expecting Jesus to return..."),
+    InfoDialog("You have reached a state where time has no meaning...", timeout=0),
 ]
 
-STATUS = 0
-STATUS_LOCK = threading.Lock()
+"""
+Advances to showing the next dialog box in line, closing the current one.
+If the next is to be open indefinitely, this is simple.
+If the next has a specific timeout, this function starts the show_timed_dialogs
+function to manage keeping windows open for the right durations.
+"""
+def show_next_dialog():
+    global dialog_idx
 
-# In milliseconds
-WINDOW_CHECK_PERIOD = 1000
-LAUNCH_WAIT_PERIOD = 10000
+    with DIAG_LOCK:
 
-# This function is called by tkinter root widgets
-# to check if their status messages should still be
-# shown or if they should be destroyed.
-def check_window(root, msg_id):
-    assert isinstance(root, tk.Tk), "Must pass a tkinter root for to check its status"
-    assert isinstance(msg_id, int) and msg_id > 0, "Msg Id must be a positive integer"
+        if dialog_idx > 0:
+            prev_diag = DIALOGS[dialog_idx-1]
+            prev_diag.close()
 
-    with STATUS_LOCK:
+        curr_diag = DIALOGS[dialog_idx]
 
-        if STATUS != msg_id:
-            root.destroy()
-
+        # If the current message does not have a specific timeout,
+        # advance as normal.
+        # If it has a timeout, start the thread which proceeds through
+        # timed messages.
+        if curr_diag.get_timeout() == 0:
+            curr_diag.show_all()
+            dialog_idx += 1
         else:
-            root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
-
-def destroy_window(root):
-    root.destroy()
-
-def make_window(status_msg):
-    assert isinstance(status_msg, StatusMsg), "Must pass a StatusMsg instance to create a status window. Instead, got a {}".format(type(status_msg))
-    msg_text = status_msg.get_msg()
-    msg_id = status_msg.get_id()
-
-    root = tk.Tk(className=WINDOW_TITLE)
-    frame = ttk.Frame(root, padding=10)
-    frame.grid()
-    ttk.Label(frame, text=msg_text).grid(column=0, row=0)
-
-    if msg_id == len(STATUS_MESSAGES):
-        # Last message; launch
-        root.after(LAUNCH_WAIT_PERIOD, destroy_window, root)
-    else:
-        root.after(WINDOW_CHECK_PERIOD, check_window, root, msg_id)
-
-    root.mainloop()
+            timed_diag_thread = threading.Thread(target=show_timed_dialogs)
+            timed_diag_thread.start()
 
 """
-We have a sequence of status messages (describing which
-stage of launching Minecraft we're up to) stored in the
-STATUS_MESSAGES global.
-They have sequentially incrementing message ids, starting
-at 1.
-So message in position x has id x+1.
-We create a window for a message. The window periodically
-checks the STATUS variable still matches its own id.
-If the STATUS variable becomes something else (i.e. when
-it advances to the next value) the existing status message
-window vanishes.
-Each time this function is called, STATUS is incremented,
-(as well as the next message window being created) so just
-call this function repeatedly to move through all the statuses.
-Calling it after all statuses are exhausted should be harmless,
-so the status messages will be gone when Minecraft actually
-launches.
+Displays an error dialog box and closes all others that might be open.
+error_diag: string, the message to show in an error window.
 """
-def next_status_window():
-    global STATUS
+def show_error_dialog(error_diag):
+    global dialog_idx
 
-    with STATUS_LOCK:
-        if STATUS < len(STATUS_MESSAGES):
-            next_msg = STATUS_MESSAGES[STATUS]
-            STATUS += 1
-            window_thread = threading.Thread(target=make_window, args=(next_msg,))
-            window_thread.start()
+    win = ErrorDialog(error_diag)
+
+    # Show error message until dismissed, then exit Gtk
+    win.connect("destroy", Gtk.main_quit)
+
+    with DIAG_LOCK:
+        # Set to max so no more info messages appear
+        dialog_idx = len(DIALOGS)
+
+    close_all_dialogs()
+
+    win.show_all()
+    Gtk.main_iteration()
+
+
+"""
+Closes all dialog boxes. Used if we're about to
+shut down Gtk (Minecraft has finished opening) or
+if we need to show an error dialog box.
+"""
+def close_all_dialogs():
+    with DIAG_LOCK:
+        for i in range(len(DIALOGS)):
+            DIALOGS[i].close()
+
+
+"""
+This function is registered as a callback when Wnck detects
+a new window opening. The function needs to determine
+if the new window is Minecraft, and if so, close Gtk.
+screen: the Gtk.Screen instance where the new window was detected
+window: the Gtk.Window instance which is newly detected
+"""
+def watch_for_minecraft(screen, window):
+
+    # TODO get correct version
+    version = "1.21.11"
+    title = window.get_name()
+
+    if ("Minecraft" in title) and (version in title):
+
+        close_all_dialogs()
+
+        # Give the Gtk main loop an iteration to process the window closures
+        # before we quit the main loop.
+        Gtk.main_iteration()
+        Gtk.main_quit()
+
+"""
+Called when a series of status dialog boxes with timeouts are due to be shown.
+This function keeps each window open for the right time, then closes it and
+moves on to the next one. Terminates if gtk shuts down, if it's time to stop
+showing dialogs (communicated by dialog_idx being set out of bounds) or
+if we reach a dialog box with no timeout.
+"""
+def show_timed_dialogs():
+    
+    global dialog_idx
+    # We will enter this function directly from
+    # show_next_message which will have detected a
+    # timed message and not shown it yet.
+    # So we show the next message ourselves.
+
+    # We use a while True to make it easy to lock inside
+    # the loop only when needed
+    while True:
+
+        with DIAG_LOCK:
+
+            # If Gtk is no longer running, exit immediately.
+            # The function which exited gtk will have already closed any current
+            # messages.
+            if Gtk.main_level() < 1:
+                break
+
+            # If we've exceeded the list of messages, exit immediately
+            if dialog_idx >= len(DIALOGS):
+                break
+
+            curr_diag = DIALOGS[dialog_idx]
+
+            # Else proceed to next message.
+            curr_diag.show_all()
+            if dialog_idx > 0:
+                DIALOGS[dialog_idx-1].close()
+
+            timeout = curr_diag.get_timeout()
+
+            dialog_idx += 1
+
+
+        # Outside lock so timeout sleeping will not
+        # occupy the lock.
+        if timeout > 0:
+            time.sleep(timeout)
         else:
-            STATUS += 1
-
-"""
-If an exception occurs, we want to display a message
-window which tells us about it.
-"""
-def error_window(error_msg):
-    assert validity.is_nonempty_str(error_msg)
-
-    # If we've hit an error, we're no longer in the normal
-    # procession of status messages and should end them.
-    close_status_window()
-
-    root = tk.Tk(className=WINDOW_TITLE)
-    frame = ttk.Frame(root, padding=10)
-    frame.grid()
-    ttk.Label(frame, text=error_msg).grid(column=0, row=0)
-
-    root.mainloop()
-
-"""
-Advance window status number beyond the last message
-so all the windows close.
-"""
-def close_status_window():
-    global STATUS
-
-    with STATUS_LOCK:
-        STATUS = len(STATUS_MESSAGES) + 1
+            # If timeout <= 0, leave message indefinitely.
+            break
 
 """
 After we close Minecraft, we establish another connection to
@@ -173,8 +240,6 @@ the game.
 """
 def request(ssock):
     
-    next_status_window()
-
     sys_username = utils.get_username()
     request_str = "{} {}\n".format(REQUEST_COMMAND, sys_username)
     request_data = request_str.encode(encoding=NETENC)
@@ -192,7 +257,7 @@ def request(ssock):
         if len(data) == 0:
             # connection closed
 
-            error_window("Server closed connection; failed to get Minecraft account.")
+            raise ConnectionAbortedError("Server closed connection; failed to get Minecraft account.")
             return
 
         received_count = len(data)
@@ -225,7 +290,7 @@ def request(ssock):
     assert validity.is_valid_minecraft_token(mc_token),\
             "Received invalid Minecraft token {}".format(mc_token)
 
-    next_status_window()
+    show_next_dialog()
 
     mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
 
@@ -233,15 +298,16 @@ def request(ssock):
 
     mc_instance.download_all()
 
-    next_status_window()
+    # Begin Wnck watching for the Minecraft window, so we know when
+    # info dialog boxes will no longer be needed.
+    # When Minecraft's window is detected, Gtk will shut down and
+    # all dialog box related elements will exit.
+    screen = Wnck.Screen.get_default()
+    screen.connect("window-opened", watch_for_minecraft)
+
+    show_next_dialog()
 
     mc_instance.launch()
-
-    # Launch message should have closed before Minecraft finishes
-    # loading and can be closed by the user, but we make sure to close
-    # the message window after the Minecraft process exists just
-    # in case.
-    close_status_window()
 
 """
 To be run at the beginning of the program, before the server is
@@ -268,6 +334,8 @@ def end_pidfile():
 def client_main(cfg):
 
     begin_pidfile()
+
+    show_next_dialog()
 
     context = ssl.create_default_context()
 
@@ -306,11 +374,18 @@ def main():
 
     cfg = startup()
 
+    # Enable graphical output for info and error windows
+    gtk_thread = threading.Thread(target=Gtk.main)
+    gtk_thread.start()
+
     try:
         client_main(cfg)
     except Exception:
         error_msg = traceback.format_exc()
-        error_window(error_msg)
+
+        # Show the error both in a window and printed to stdout
+        show_error_dialog(error_msg)
+        print(error_msg)
 
     # If the client crashes, we want to make sure we
     # delete the pidfile so it doesn't block future launches
