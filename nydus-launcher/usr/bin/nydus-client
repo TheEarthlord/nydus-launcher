@@ -303,6 +303,7 @@ def request(ssock):
     # When Minecraft's window is detected, Gtk will shut down and
     # all dialog box related elements will exit.
     screen = Wnck.Screen.get_default()
+    screen.force_update()
     screen.connect("window-opened", watch_for_minecraft)
 
     show_next_dialog()
