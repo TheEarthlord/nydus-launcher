@@ -7,6 +7,7 @@ import os
 import pwd
 import re
 from nydus.common import validity
+from nydus.common.validity import MC_VERSION_PARTS
 
 """
 Raises OSError if something's wrong with pwd database entry
@@ -264,6 +265,30 @@ def get_url_path(url):
 
     path = without_protocol[slash_idx + 1:]
     return path
+
+"""
+A Minecraft version may be of the form X.Y.Z where X, Y, and Z are integers,
+but it may also be of the form X.Y.Z-somestring, such as if you're running
+Optifine in which case you might get something like X.Y.Z-Optifine_U_J9
+This function takes in a Minecraft version string and returns a string
+containing only the dot-separated digits.
+"""
+def get_version_numbers(mc_version):
+    if not validity.is_valid_minecraft_version(mc_version):
+        raise ValueError("get_version_numbers must be given a valid Minecraft version string. Instead, was given {}".format(mc_version))
+
+    if validity.is_valid_version(mc_version, MC_VERSION_PARTS):
+        return mc_version
+
+    dash_parts = mc_version.split("-")
+    if len(dash_parts) == 2:
+        # First part is numberic
+        # Second part is text we don't need.
+
+        if validity.is_valid_version(dash_parts[0], MC_VERSION_PARTS):
+            return dash_parts[0]
+
+    raise ValueError("{} seems to not be a valid Minecraft version; could not isolate the numeric part.".format(mc_version))
 
 """
 sha1 hash digests appearing in the Minecraft json files

@@ -386,5 +386,25 @@ class TestIsSha1(unittest.TestCase):
         with self.assertRaises(AssertionError):
             is_sha1(6591234561228020168789081723944958.836824)
 
+class TestIsSha1(unittest.TestCase):
+
+    def test_sample1(self):
+        self.assertEqual(get_version_numbers("1.21.1"), "1.21.1")
+
+    def test_sample1(self):
+        self.assertEqual(get_version_numbers("1.21.11-OptiFine_HD_U_J9"), "1.21.11")
+
+    def test_error1(self):
+        with self.assertRaises(ValueError):
+            get_version_numbers("OptiFine_HD_U_J9")
+
+    def test_error2(self):
+        with self.assertRaises(ValueError):
+            get_version_numbers("1.20.6-modded-version")
+
+    def test_error3(self):
+        with self.assertRaises(ValueError):
+            get_version_numbers("OptiFine_HD_U_J7-1.14.0")
+
 if __name__ == "__main__":
     unittest.main()
