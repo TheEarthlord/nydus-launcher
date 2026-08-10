@@ -386,7 +386,7 @@ class TestIsSha1(unittest.TestCase):
         with self.assertRaises(AssertionError):
             is_sha1(6591234561228020168789081723944958.836824)
 
-class TestIsSha1(unittest.TestCase):
+class TestGetVersionNumbers(unittest.TestCase):
 
     def test_sample1(self):
         self.assertEqual(get_version_numbers("1.21.1"), "1.21.1")
