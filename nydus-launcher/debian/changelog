@@ -1,3 +1,12 @@
+nydus-launcher (2.4.0) jammy; urgency=medium
+
+  * Retrofitted nydus-client to use Gtk and Wnck instead of tkinter
+  * Now we have several messages which appear in sequence while waiting for
+    Minecraft to launch, and only once the Minecraft window appears do the
+    message windows vanish.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Mon, 10 Aug 2026 20:30:04 +1000
+
 nydus-launcher (2.3.2) jammy; urgency=medium
 
   * Pidfile back in /tmp; /run is unsuitable as it is only writable by root.
