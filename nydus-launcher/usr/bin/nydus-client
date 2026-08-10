@@ -41,6 +41,11 @@ NETENC="utf-8"
 
 MSG_END = "\n"
 
+# A global for storing the numeric part of the Minecraft version we want
+# to launch. Needed because the function which watches new windows
+# needs to know the Minecraft version we're looking for, but Wnck doesn't
+# allow flexibility in what we pass to it.
+NUMERIC_VERSION = None
 
 DIAG_LOCK = threading.Lock()
 
@@ -151,11 +156,12 @@ window: the Gtk.Window instance which is newly detected
 """
 def watch_for_minecraft(screen, window):
 
-    # TODO get correct version
-    version = "1.21.11"
     title = window.get_name()
 
-    if ("Minecraft" in title) and (version in title):
+    if not NUMERIC_VERSION:
+        raise TypeError("Numeric Minecraft version should have been set before watching for the Minecraft window, but it was {}".format(NUMERIC_VERSION))
+
+    if ("Minecraft" in title) and (NUMERIC_VERSION in title):
 
         close_all_dialogs()
 
@@ -239,6 +245,8 @@ this function requests a Minecraft account and starts
 the game.
 """
 def request(ssock):
+
+    global NUMERIC_VERSION
     
     sys_username = utils.get_username()
     request_str = "{} {}\n".format(REQUEST_COMMAND, sys_username)
@@ -298,10 +306,12 @@ def request(ssock):
 
     mc_instance.download_all()
 
+    NUMERIC_VERSION = utils.get_version_numbers(mc_version)
     # Begin Wnck watching for the Minecraft window, so we know when
     # info dialog boxes will no longer be needed.
     # When Minecraft's window is detected, Gtk will shut down and
     # all dialog box related elements will exit.
+
     screen = Wnck.Screen.get_default()
     screen.force_update()
     screen.connect("window-opened", watch_for_minecraft)
