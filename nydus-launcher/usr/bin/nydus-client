@@ -18,7 +18,7 @@ gi.require_version("Wnck", "3.0")
 
 from gi.repository import Gtk
 from gi.repository import Wnck
-from nydus.client import nodupe
+from nydus.client import noduplication
 from nydus.client import utils
 from nydus.client.ClientConfig import ClientConfig
 from nydus.client.ErrorDialog import ErrorDialog
@@ -331,17 +331,17 @@ WARNING: This function will exit the whole program if the right conditions
 are met, without presenting an error message for the user.
 """
 def begin_pidfile():
-    if nodupe.nydus_client_running():
+    if noduplication.nydus_client_running():
         exit(0)
 
-    nodupe.make_pidfile()
+    noduplication.make_pidfile()
 
 """
 To be run at the end of the program, after Minecraft is finished.
 Deletes the pidfile.
 """
 def end_pidfile():
-    nodupe.delete_pidfile()
+    noduplication.delete_pidfile()
 
 def client_main(cfg):
 
@@ -401,7 +401,7 @@ def main():
 
     # If the client crashes, we want to make sure we
     # delete the pidfile so it doesn't block future launches
-    if nodupe.pidfile_exists():
+    if noduplication.pidfile_exists():
         end_pidfile()
 
 main()
