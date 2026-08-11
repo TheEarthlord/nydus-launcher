@@ -321,31 +321,9 @@ def request(ssock):
 
     mc_instance.launch()
 
-"""
-To be run at the beginning of the program, before the server is
-contacted. Checks for a pidfile, an indicator that a Nydus Client
-instance is already running for this user on this machine, and if
-one is present, exits immediately to avoid duplicate Minecraft
-instances.
-WARNING: This function will exit the whole program if the right conditions
-are met, without presenting an error message for the user.
-"""
-def begin_pidfile():
-    if noduplication.nydus_client_running():
-        exit(0)
 
-    noduplication.make_pidfile()
-
-"""
-To be run at the end of the program, after Minecraft is finished.
-Deletes the pidfile.
-"""
-def end_pidfile():
-    noduplication.delete_pidfile()
 
 def client_main(cfg):
-
-    begin_pidfile()
 
     show_next_dialog()
 
@@ -373,12 +351,11 @@ def client_main(cfg):
            
             release(ssock)
 
-    end_pidfile()
-
 
 def startup():
     cfg = ClientConfig()
     return cfg
+
 
 def main():
     
@@ -390,6 +367,10 @@ def main():
     gtk_thread = threading.Thread(target=Gtk.main)
     gtk_thread.start()
 
+    # Will exit program if a pidfile is already present, indicating
+    # a second instance of Nydus Client.
+    noduplication.setup_pidfile()
+
     try:
         client_main(cfg)
     except Exception:
@@ -399,9 +380,9 @@ def main():
         show_error_dialog(error_msg)
         print(error_msg)
 
-    # If the client crashes, we want to make sure we
-    # delete the pidfile so it doesn't block future launches
-    if noduplication.pidfile_exists():
-        end_pidfile()
+    # We want to make sure we delete the pidfile, even if we
+    # crashed from the main client, so we don't leave future
+    # clients blocked.
+    noduplication.delete_pidfile()
 
 main()

@@ -5,3 +5,4 @@ msal
 
 # For nydus-client
 requests
+psutil
