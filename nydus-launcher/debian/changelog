@@ -1,3 +1,11 @@
+nydus-launcher (2.4.1) jammy; urgency=medium
+
+  * Updated nydus-client's nodupe submodule to noduplication.
+  * Added use of psutil to check whether an old pidfile's recorded PID is
+    still running somewhere.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Tue, 11 Aug 2026 17:48:29 +1000
+
 nydus-launcher (2.4.0) jammy; urgency=medium
 
   * Retrofitted nydus-client to use Gtk and Wnck instead of tkinter
