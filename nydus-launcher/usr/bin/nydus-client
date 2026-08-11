@@ -361,15 +361,15 @@ def main():
     
     nydus_info.request_version()
 
+    # Will exit program if a pidfile is already present, indicating
+    # a second instance of Nydus Client.
+    noduplication.setup_pidfile()
+
     cfg = startup()
 
     # Enable graphical output for info and error windows
     gtk_thread = threading.Thread(target=Gtk.main)
     gtk_thread.start()
-
-    # Will exit program if a pidfile is already present, indicating
-    # a second instance of Nydus Client.
-    noduplication.setup_pidfile()
 
     try:
         client_main(cfg)
