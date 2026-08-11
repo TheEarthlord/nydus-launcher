@@ -235,7 +235,7 @@ def release(ssock):
     
     total_sent = 0
     while total_sent < len(request_data):
-        total_sent += ssock.send(request_data)
+        total_sent += ssock.send(request_data[total_sent:])
 
     ssock.close()
 
@@ -255,7 +255,7 @@ def request(ssock):
     
     total_sent = 0
     while total_sent < len(request_data):
-        total_sent += ssock.send(request_data)
+        total_sent += ssock.send(request_data[total_sent:])
 
     # Note you can be kept waiting for data forever
     # by a rogue server. Add some kind of timeout.
