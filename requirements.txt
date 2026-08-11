@@ -1,8 +1,0 @@
-# Pip packages needed for Nydus Launcher
-
-# For nydus-server
-msal
-
-# For nydus-client
-requests
-psutil

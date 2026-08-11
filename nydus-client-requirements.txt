@@ -1,0 +1,6 @@
+# On Debian-based systems, you will likely be able to installed these
+# through apt as python3-requests, python3-psutil, and python3-gi,
+# instead of using pip.
+requests
+psutil
+PyGObject

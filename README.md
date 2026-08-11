@@ -81,12 +81,16 @@ other installed Nydus Launcher packages.
 
 ## Requirements
 
-Several additional python modules are needed for the Nydus Launcher to work.
-These should either be installed by apt (in which case they are listed as
-package dependencies in the Debian control file) or by pip (in which case they
-are listed in the requirements.txt in the root of the project).
+Several additional python modules and some other packages are needed for the
+Nydus Launcher to work.
+The additional python modules needed are listed in nydus-server-requirements.txt
+and nydus-client-requirements.txt. They may be installed by pip, but on
+Debian-based systems such as Ubuntu (on which the Nydus Launcher was designed)
+there are often apt packages which will install the same python modules.
+Other required packages are listed as package dependencies in the Debian
+control file under nydus-launcher/nydus-launcher/debian.
 
-Also worthy of note is that the nydus-client package needs the offical
+Worthy of note is that the nydus-client package needs the offical
 minecraft-launcher deb package installed. This is because the minecraft-launcher
 package sets up the needed installation environment, in particular the contents
 of ~/.minecraft, and makes sure that the Java installation is correct
