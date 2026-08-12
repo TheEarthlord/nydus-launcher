@@ -52,7 +52,7 @@ from nydus.server.log import log_server
 # 3) Cleanup
 # read through the file
 # Release all accounts which
-#   - have been allocated more than 2 hours
+#   - have been allocated longer than the expiry time
 #   - the user to which they were allocated is no longer logged in on that client
 #     (find out using process list since logins are over ssh)
 #   - the client to which they were allocated is no longer active
@@ -614,20 +614,24 @@ class AllocAccount:
 
 """
 Initiate the AllocEngine with the path to the csv containing all
-the Minecraft accounts
+the Minecraft account allocation data (the 'allocation database').
 This class is intended to be created again by each thread that
 needs to work with the account database, then call one
-of its methods to do one of the operations.
+of its methods to do one of the operations. Thus, normally it
+reads the contents of the allocation database.
+If you're creating a new allocation database, as needs to be done
+each time nydus-server starts up, call create_db.
 """
 class AllocEngine:
 
     """
-    When creating the alloc db file for the first time, leave it empty and
-    AllocEngine won't read any data out of it.
-    Then call the create_db method to set up the accounts and write the data
-    into the file.
+    path: string, absolute path to the allocation database file.
+    read_file: boolean, defaults to True. If True, read from the existing
+        allocation database file to populate this AllocEngine with data.
+        If False, don't read from the file. In that case, you probably want
+        to call create_db to make a new allocation database.
     """
-    def __init__(self, path):
+    def __init__(self, path, read_file=True):
         if not isinstance(path, str):
             raise TypeError("Path to allocation database file must be a string. Was {}".format(path))
 
@@ -642,7 +646,9 @@ class AllocEngine:
         
         self.path = path
         self.accounts = []
-        self.load_alloc_db()
+
+        if read_file:
+            self.load_alloc_db()
 
     def num_total_accounts(self):
         return len(self.accounts)
@@ -943,11 +949,16 @@ class AllocEngine:
 
     """
     aat_list: a list of AccountAuthTokens instances.
-    This method is intended to be called when no accounts were
-    present in the allocation db file (it will raise an Exception
-    if accounts were found). It will create an
-    entry for each of the AccountAuthTokens instances given,
-    and write them all into the file.
+    This method is intended to create a new allocation database with the
+    account information passed to it, and write it into the file.
+    This method should be called once during setup when the nydus server
+    first starts.
+    AllocEngine by default will read from the allocation database during
+    instantiation, but this method ignores existing data and overwrites
+    the AllocEngine and allocation database file with data for the accounts
+    you pass in here.
+    Pass the read_file=False argument to AllocEngine instantiation to prevent
+    initial reading from the alloc database and save some processing.
     """
     def create_db(self, aat_list):
         if not isinstance(aat_list, list):
@@ -956,9 +967,6 @@ class AllocEngine:
         for elem in aat_list:
             if not isinstance(elem, AccountAuthTokens):
                 raise TypeError("The aat list given to create_db must contain only AccountAuthTokens, but found a {}".format(type(elem)))
-
-        if len(self.accounts) > 0:
-            raise ValueError("create_db is intended to be called when no accounts were found in the allocation db file, but AllocEngine found {} accounts".format(len(self.accounts)))
 
         for aat in aat_list:
             self.accounts.append(AllocAccount.create_from_aat("", "", "", "", aat))
