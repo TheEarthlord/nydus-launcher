@@ -1,3 +1,11 @@
+nydus-launcher (2.5.2) jammy; urgency=medium
+
+  * Modified nydus-server so that it always makes a new allocation database
+    from the list of microsoft accounts when starting, rather than reading
+    from the existing allocation database.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 12 Aug 2026 22:09:43 +1000
+
 nydus-launcher (2.4.1) jammy; urgency=medium
 
   * Updated nydus-client's nodupe submodule to noduplication.
