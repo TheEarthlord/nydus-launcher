@@ -1,3 +1,9 @@
+nydus-launcher (2.5.3) jammy; urgency=medium
+
+  * Moved most client dialog functions into a separate module
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Thu, 13 Aug 2026 11:19:31 +1000
+
 nydus-launcher (2.5.2) jammy; urgency=medium
 
   * Modified nydus-server so that it always makes a new allocation database

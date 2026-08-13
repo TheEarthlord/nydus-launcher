@@ -1,50 +1,15 @@
 
 import gi
+import threading
+import time
+
 gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk
 from nydus.common import validity
 
 INFO_TITLE = "Nydus Launcher"
 ERROR_TITLE = "Nydus Launcher Error"
-
-DIAG_LOCK = threading.Lock()
-
-# Used to track which status dialog box we're up to
-# showing as we work through the process of launching Minecraft.
-# This is a global modified by several threads.
-# Always use the DIAG_LOCK when touching it.
-dialog_idx = 0
-
-# The list of status dialog boxes in order, displaying
-# stages in launching Minecraft.
-# Those with timeouts of 0 will persist until the program
-# reaches a new stage. The others swap out every few seconds
-# to reassure the user the program is still running, should
-# Minecraft take a while to appear on screen.
-# Always use the DIAG_LOCK when opening or closing one of these windows.
-DIALOGS = [
-    InfoDialog("Requesting Minecraft credentials from server...", timeout=0),
-    InfoDialog("Downloading files for Minecraft...", timeout=0),
-    InfoDialog("Launching Minecraft..."),
-    InfoDialog("Waiting for the grass to grow..."),
-    InfoDialog("Spreading lava..."),
-    InfoDialog("Making contact with the mothership..."),
-    InfoDialog("Eroding a cliff-face..."),
-    InfoDialog("The seconds are ticking by..."),
-    InfoDialog("Circumnavigating the globe..."),
-    InfoDialog("Crossing the desert on foot..."),
-    InfoDialog("Journeying to the centre of the earth..."),
-    InfoDialog("Watching trees grow..."),
-    InfoDialog("Waiting for the sermon to be over..."),
-    InfoDialog("Singing another chorus..."),
-    InfoDialog("Following Pluto's orbit..."),
-    InfoDialog("Stepping out of the time machine..."),
-    InfoDialog("The elves are fading away..."),
-    InfoDialog("Atlantis rises from the deeps..."),
-    InfoDialog("Watching the years slip by..."),
-    InfoDialog("Imminently expecting Jesus to return..."),
-    InfoDialog("You have reached a state where time has no meaning...", timeout=0),
-]
 
 """
 Class for displaying informational messages as the Nydus Client
@@ -89,6 +54,46 @@ class ErrorDialog(Gtk.MessageDialog):
 
         super().__init__(text=ERROR_TITLE, secondary_text=msg_text, image=None)
 
+
+
+DIAG_LOCK = threading.Lock()
+
+# Used to track which status dialog box we're up to
+# showing as we work through the process of launching Minecraft.
+# This is a global modified by several threads.
+# Always use the DIAG_LOCK when touching it.
+dialog_idx = 0
+
+# The list of status dialog boxes in order, displaying
+# stages in launching Minecraft.
+# Those with timeouts of 0 will persist until the program
+# reaches a new stage. The others swap out every few seconds
+# to reassure the user the program is still running, should
+# Minecraft take a while to appear on screen.
+# Always use the DIAG_LOCK when opening or closing one of these windows.
+DIALOGS = [
+    InfoDialog("Requesting Minecraft credentials from server...", timeout=0),
+    InfoDialog("Downloading files for Minecraft...", timeout=0),
+    InfoDialog("Launching Minecraft..."),
+    InfoDialog("Waiting for the grass to grow..."),
+    InfoDialog("Spreading lava..."),
+    InfoDialog("Making contact with the mothership..."),
+    InfoDialog("Eroding a cliff-face..."),
+    InfoDialog("The seconds are ticking by..."),
+    InfoDialog("Circumnavigating the globe..."),
+    InfoDialog("Crossing the desert on foot..."),
+    InfoDialog("Journeying to the centre of the earth..."),
+    InfoDialog("Watching trees grow..."),
+    InfoDialog("Waiting for the sermon to be over..."),
+    InfoDialog("Singing another chorus..."),
+    InfoDialog("Following Pluto's orbit..."),
+    InfoDialog("Stepping out of the time machine..."),
+    InfoDialog("The elves are fading away..."),
+    InfoDialog("Atlantis rises from the deeps..."),
+    InfoDialog("Watching the years slip by..."),
+    InfoDialog("Imminently expecting Jesus to return..."),
+    InfoDialog("You have reached a state where time has no meaning...", timeout=0),
+]
 
 """
 Advances to showing the next dialog box in line, closing the current one.
