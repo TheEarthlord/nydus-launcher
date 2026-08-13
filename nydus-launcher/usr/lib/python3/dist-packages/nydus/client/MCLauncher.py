@@ -40,6 +40,9 @@ class MCLauncher:
 
         self.load_versions()
 
+    def get_mc_version(self):
+        return self.version
+
     def get_target_json_version(self):
         return self.versions_list[0]
 

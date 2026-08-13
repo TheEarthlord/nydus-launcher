@@ -94,13 +94,12 @@ def release(ssock):
 
 """
 Once we've established connection with the server,
-this function requests a Minecraft account and starts
-the game.
+this function requests a Minecraft account.
+Returns an MCLauncher instance containing the Minecraft version, username,
+uuid, and token needed to launch Minecraft.
 """
 def request(ssock):
-
-    global NUMERIC_VERSION
-    
+   
     sys_username = utils.get_username()
     request_str = "{} {}\n".format(REQUEST_COMMAND, sys_username)
     request_data = request_str.encode(encoding=NETENC)
@@ -151,14 +150,29 @@ def request(ssock):
     assert validity.is_valid_minecraft_token(mc_token),\
             "Received invalid Minecraft token {}".format(mc_token)
 
-    dialogs.show_next_dialog()
-
     mc_acc = MCAccount(mc_username, mc_uuid, mc_token)
 
     mc_instance = MCLauncher(mc_version, mc_acc)
 
+    return mc_instance
+
+
+"""
+Once we've received credentials and information from the server,
+this function downloads files as necessary and starts the game.
+mc_instance: an MCLauncher instance set up with the Minecraft
+    version to launch, and also holding the username, uuid, and token
+    received from the server.
+"""
+def start_game(mc_instance):
+
+    global NUMERIC_VERSION
+ 
+    dialogs.show_next_dialog()
+
     mc_instance.download_all()
 
+    mc_version = mc_instance.get_mc_version()
     NUMERIC_VERSION = utils.get_version_numbers(mc_version)
     # Begin Wnck watching for the Minecraft window, so we know when
     # info dialog boxes will no longer be needed.
@@ -172,7 +186,6 @@ def request(ssock):
     dialogs.show_next_dialog()
 
     mc_instance.launch()
-
 
 
 def client_main(cfg):
@@ -193,11 +206,12 @@ def client_main(cfg):
     with socket.create_connection((dest_ip, cfg.get_port())) as sock:
         with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
            
-            request(ssock)
+            mc_instance = request(ssock)
+
+    start_game(mc_instance)
 
     # We only proceed when the Minecraft program terminates,
     # at which point we should release the account.
-
     with socket.create_connection((dest_ip, cfg.get_port())) as sock:
         with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
            
