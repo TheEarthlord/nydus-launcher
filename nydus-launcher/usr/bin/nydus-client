@@ -234,6 +234,7 @@ def main():
     cfg = startup()
 
     # Enable graphical output for info and error windows
+    Gtk.init()
     gtk_thread = threading.Thread(target=Gtk.main)
     gtk_thread.start()
 
