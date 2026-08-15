@@ -551,13 +551,6 @@ class AllocAccount:
     def get_alloc_time(self):
         return self.alloc_time
 
-    """
-    The usual get_alloc_time returns a string, which is what is stored
-    internally. This method returns a datetime.
-    """
-    def get_alloc_datetime(self):
-        return datetime.datetime.strptime(self.alloc_time, TIME_FORMAT)
-
     def get_renewal_time(self):
         return self.renewal_time
 
@@ -864,7 +857,7 @@ class AllocEngine:
         if existing_allocs:
             oldest = existing_allocs[0]
             for acc in existing_allocs[1:]:
-                if acc.get_alloc_datetime() < oldest.get_alloc_datetime():
+                if acc.get_alloc_time() < oldest.get_alloc_time():
                     oldest = acc
 
         return oldest
