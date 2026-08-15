@@ -1091,8 +1091,10 @@ class AllocEngine:
         self.write_changes()
 
     """
-    alloc_timeout: positive int, number of minutes before an account is considered expired.
-    Releases all the accounts which are past their allocation timeout.
+    alloc_timeout: positive int, number of minutes for which an account must
+    not be renewed before it is considered expired.
+    Releases all the accounts which have been allocated for too long and not
+    gotten renewed.
     """
     def release_expired(self, alloc_timeout):
         for acc in self.accounts:
