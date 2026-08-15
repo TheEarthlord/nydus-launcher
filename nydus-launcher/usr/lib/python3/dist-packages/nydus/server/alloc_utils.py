@@ -89,7 +89,7 @@ def read_accounts_file(path):
 
 """
 The master cleanup function.
-Nydus Server runs this every RENEWAL_PERIOD and Nydus Cli
+Nydus Server runs this every CLEANUP_PERIOD and Nydus Cli
 can run it whenever desired.
 It renews all authentication tokens which are close to expiring.
 It releases all Minecraft account allocations which have passed the

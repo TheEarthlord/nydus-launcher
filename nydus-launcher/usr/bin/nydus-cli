@@ -19,8 +19,8 @@ VIEW_IP = "view-ip"
 ALLOC = "alloc"
 RELEASE_UUID = "release-uuid"
 RELEASE_IP = "release-ip"
-RESERVE_UUID = "reserve-uuid"
-UNRESERVE_UUID = "unreserve-uuid"
+RESERVE_UUID = "lock-uuid"
+UNRESERVE_UUID = "unlock-uuid"
 UUID_SHOW = "uuid-show"
 CLEANUP = "cleanup"
 HELP = "help"
@@ -207,9 +207,9 @@ def cli_main(cfg):
     elif command == RELEASE_IP:
         allocengine.release_account_ip(data)
     elif command == RESERVE_UUID:
-        allocengine.reserve_uuid(data)
+        allocengine.lock_uuid(data)
     elif command == UNRESERVE_UUID:
-        allocengine.unreserve_uuid(data)
+        allocengine.unlock_uuid(data)
     elif command == UUID_SHOW:
         print(allocengine.uuid_show())
     elif command == CREATE:

@@ -63,14 +63,14 @@ from nydus.server.log import log_server
 # with the new one.
 # This needs to happen periodically. How often?
 
-RESERVED_TOKEN = "RESERVED"
+LOCKED_TOKEN = "LOCKED"
 
 ALLOC_FILE = "nydus-alloc.csv"
 
 ALLOC_DELIM = ","
 
 FIELDS = [
-    "reserved",
+    "locked",
     "client_ip",
     "client_username",
     "alloc_time",
@@ -89,7 +89,7 @@ FIELDS = [
 ]
 
 SUMMARY_FIELDS = [
-    "reserved",
+    "locked",
     "client_ip",
     "client_username",
     "alloc_time",
@@ -136,12 +136,12 @@ class AllocAccount:
     and want to use that directly, call the class method
     AllocAccount.create_from_aat()
     """
-    def __init__(self, reserved, client_ip, client_username, alloc_time,
+    def __init__(self, locked, client_ip, client_username, alloc_time,
             ms_username, msal_token, msal_expiry, xboxlive_token,
             xboxlive_expiry, xsts_token, xsts_expiry, xsts_hash,
             mc_token, mc_expiry, mc_username, mc_uuid):
 
-        self.set_reserved(reserved)
+        self.set_locked(locked)
         self.set_client_ip(client_ip)
         self.set_client_username(client_username)
         self.set_alloc_time(alloc_time)
@@ -188,13 +188,13 @@ class AllocAccount:
     strings, and they should be if the database file is being created
     from scratch.
     """
-    def create_from_aat(reserved, client_ip, client_username, alloc_time, aat):
+    def create_from_aat(locked, client_ip, client_username, alloc_time, aat):
 
         if not isinstance(aat, AccountAuthTokens):
             raise TypeError("To create an AllocAccount using AccountAuthTokens, an AccountAuthTokens instance must be provided. Instead, {} was given.".format(type(aat)))
 
         return AllocAccount(
-            reserved,
+            locked,
             client_ip,
             client_username,
             alloc_time,
@@ -256,7 +256,7 @@ class AllocAccount:
 
     """
     Creates a line of summary data, for easy viewing.
-    Includes reservation status, allocation client IP, allocation client username, allocation time,
+    Includes lock status, allocation client IP, allocation client username, allocation time,
     minecraft username, and microsoft username.
     It's spaced for easy reading.
     Does NOT include a newline on the end.
@@ -264,12 +264,12 @@ class AllocAccount:
     def summary(self):
         summary_blocks = []
             
-        reserved_field = ""
-        if self.is_reserved():
-            reserved_field = RESERVED_TOKEN
+        locked_field = ""
+        if self.is_locked():
+            locked_field = LOCKED_TOKEN
 
         fields = [
-            self.get_reserved_state(),
+            self.get_locked_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -317,7 +317,7 @@ class AllocAccount:
 
     def copy(self):
         return AllocAccount(
-            self.get_reserved_state(),
+            self.get_locked_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -342,8 +342,8 @@ class AllocAccount:
     being allocated in program memory.
     """
     def allocate(self, client_ip, client_username):
-        if self.is_reserved():
-            log_server("Tried to allocate account {} with uuid {} to IP {} and username {}, but it was reserved".format(\
+        if self.is_locked():
+            log_server("Tried to allocate account {} with uuid {} to IP {} and username {}, but it was locked".format(\
                     self.get_ms_username(), self.get_mc_uuid(), client_ip, client_username))
             return False
         now = datetime.datetime.now()
@@ -357,8 +357,8 @@ class AllocAccount:
     Returns True if release was successful, False otherwise
     """
     def release(self):
-        if self.is_reserved():
-            log_server("Tried to release account {} with uuid {}, but it was reserved".format(\
+        if self.is_locked():
+            log_server("Tried to release account {} with uuid {}, but it was locked".format(\
                     self.get_ms_username(), self.get_mc_uuid()))
             return False
         self.set_client_ip("")
@@ -367,24 +367,24 @@ class AllocAccount:
         return True
 
     """
-    If an account is "reserved", it will not be allocated
-    or released. Reservation can only be set and unset
+    If an account is "locked", it will not be allocated
+    or released. Locking can only be set and unset
     by directly using nydus-cli; it won't be done automatically
     by the server.
-    Reservation is intended for if a machine needs to be able to
+    Locking is intended for if a machine needs to be able to
     log into Minecraft but can't run the Nydus Launcher client.
-    Reserve one of the Minecraft accounts so it won't get
+    Lock one of the Minecraft accounts so it won't get
     allocated somewhere else, then use it freely on the no-Nydus
     machine.
     """
-    def is_reserved(self):
-        return self.account_reserved
+    def is_locked(self):
+        return self.account_locked
 
-    def reserve(self):
-        self.account_reserved = True
+    def lock(self):
+        self.account_locked = True
 
-    def unreserve(self):
-        self.account_reserved = False
+    def unlock(self):
+        self.account_locked = False
 
     # Type checks for the 'update' methods
     # occur inside the AccountAuthTokens method where applicable
@@ -412,14 +412,14 @@ class AllocAccount:
     Returns True if the account is allocated and has been allocated
     for longer than the alloc timeout.
     Otherwise, return False (including if the account is not allocated,
-    or is reserved)
+    or is locked)
     """
     # TODO handling of alloc timeout doesn't seem to have been
     # done properly here. We really need to turn it into a datetime
     # to compare properly
     def alloc_expired(self, alloc_timeout):
 
-        if self.is_reserved():
+        if self.is_locked():
             return False
         now = datetime.datetime.now()
         if self.get_alloc_time():
@@ -458,16 +458,16 @@ class AllocAccount:
         return self.aat.get_minecraft_token().needs_renewal(check_interval, num_intervals)
 
     """
-    reserved_token: string, from the alloc database.
-    Should be contents of RESERVED_TOKEN or empty string
+    locked_token: string, from the alloc database.
+    Should be contents of LOCKED_TOKEN or empty string
     """
-    def set_reserved(self, reserved_token):
-        if reserved_token == RESERVED_TOKEN:
-            self.account_reserved = True
-        elif reserved_token == "":
-            self.account_reserved = False
+    def set_locked(self, locked_token):
+        if locked_token == LOCKED_TOKEN:
+            self.account_locked = True
+        elif locked_token == "":
+            self.account_locked = False
         else:
-            raise ValueError("Reserved state entry must be either {} or ''. Instead, got {}".format(RESERVED_TOKEN, reserved_token))
+            raise ValueError("Lock state entry must be either {} or ''. Instead, got {}".format(LOCKED_TOKEN, locked_token))
 
     # We must allow empty string for client_ip, client_username, and
     # alloc time as empty strings for them indicate an unallocated account
@@ -497,9 +497,9 @@ class AllocAccount:
         else:
             raise TypeError("Object given is not an AccountAuthTokens class: {}".format(aat))
 
-    def get_reserved_state(self):
-        if self.account_reserved:
-            return RESERVED_TOKEN
+    def get_locked_state(self):
+        if self.account_locked:
+            return LOCKED_TOKEN
         else:
             return ""
 
@@ -585,7 +585,7 @@ class AllocAccount:
     """
     def __repr__(self):
         fields = [
-            self.get_reserved_state(),
+            self.get_locked_state(),
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
@@ -915,37 +915,37 @@ class AllocEngine:
 
     """
     Finds an account (or all accounts if there are more than one) of a specific
-    uuid, and reserves them.
-    Reservation means an account can't be allocated by any means until unreserved.
+    uuid, and locks them.
+    Locking means an account can't be allocated by any means until unlocked.
     """
-    def reserve_uuid(self, uuid):
+    def lock_uuid(self, uuid):
         if not validity.is_valid_minecraft_uuid(uuid):
             raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
 
-        to_reserve = [acc for acc in self.accounts\
+        to_lock = [acc for acc in self.accounts\
                 if acc.get_mc_uuid() == uuid]
 
-        for acc in to_reserve:
-            acc.reserve()
-            log_server("Reserved account {} with uuid {}".format(\
+        for acc in to_lock:
+            acc.lock()
+            log_server("Locked account {} with uuid {}".format(\
                     acc.get_ms_username(), acc.get_mc_uuid()))
         self.write_changes()
 
     """
     Finds an account (or all accounts if there are more than one) of a specific
-    uuid, and unreserves them.
-    Reservation means an account can't be allocated by any means until unreserved.
+    uuid, and unlocks them.
+    Locking means an account can't be allocated by any means until unlocked.
     """
-    def unreserve_uuid(self, uuid):
+    def unlock_uuid(self, uuid):
         if not validity.is_valid_minecraft_uuid(uuid):
             raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
 
-        to_unreserve = [acc for acc in self.accounts\
+        to_unlock = [acc for acc in self.accounts\
                 if acc.get_mc_uuid() == uuid]
 
-        for acc in to_unreserve:
-            acc.unreserve()
-            log_server("Unreserved account {} with uuid {}".format(\
+        for acc in to_unlock:
+            acc.unlock()
+            log_server("Unlocked account {} with uuid {}".format(\
                     acc.get_ms_username(), acc.get_mc_uuid()))
         self.write_changes()
 
@@ -1009,7 +1009,7 @@ class AllocEngine:
     """
     def release_expired(self, alloc_timeout):
         for acc in self.accounts:
-            if acc.alloc_expired(alloc_timeout) and not acc.is_reserved():
+            if acc.alloc_expired(alloc_timeout) and not acc.is_locked():
                 result = acc.release()
                 if result:
                     log_server("Released account {}; allocation expired".format(\
