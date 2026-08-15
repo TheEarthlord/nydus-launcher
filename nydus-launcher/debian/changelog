@@ -1,3 +1,13 @@
+nydus-launcher (3.0.0) jammy; urgency=medium
+
+  * Modified client and server to use a renewal system.
+  * Client sends renewal signals every so often.
+  * Server deallocates an account only if renewals haven't come in a while.
+  * Allows account expiry time to be much shorter while allocations remain as
+    long as the client can keep the server informed.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Sat, 15 Aug 2026 17:38:50 +1000
+
 nydus-launcher (2.5.4) jammy; urgency=medium
 
   * Moved Minecraft launching code out of request function in client
