@@ -86,7 +86,7 @@ def renew(ssock):
 
     total_sent = 0
     while total_sent < len(renew_data):
-        total_send += ssock.send(renew_data[total_sent:])
+        total_sent += ssock.send(renew_data[total_sent:])
 
     ssock.close()
 
