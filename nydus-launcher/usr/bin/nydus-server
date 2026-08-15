@@ -29,6 +29,7 @@ ALLOC_DELIMS = 3
 ALLOC_BASE = ALLOC_DCHAR.join(["{}"] * (ALLOC_DELIMS+1)) + "\n"
 
 REQUEST_COMMAND = "REQUEST"
+RENEW_COMMAND = "RENEW"
 RELEASE_COMMAND = "RELEASE"
 
 NETENC = "utf-8"
@@ -62,6 +63,8 @@ def allocate_account(cfg, conn, addr, sys_username):
     # Error to handle: no account could be obtained
     # TODO what kind of exception?
     if mc_account == None:
+        log_server("Could not allocate a Minecraft account to IP {}, username {}".format(\
+                client_ip, sys_username))
         raise Exception("Could not allocate a Minecraft account when requested")
     mc_username = mc_account.get_mc_username()
     mc_uuid = mc_account.get_mc_uuid()
@@ -76,6 +79,15 @@ def allocate_account(cfg, conn, addr, sys_username):
     while sent_data < len(allocation_data):
         sent_data += conn.send(allocation_data[sent_data:])
 
+def renew_account(cfg, conn, addr, sys_username):
+    # Renew the allocation on that address
+
+    client_ip = addr[0]
+
+    with ALLOCDB_LOCK:
+        alloc_engine = AllocEngine(cfg.get_alloc_file())
+        alloc_engine.renew_one_account(client_ip, sys_username)
+
 def release_account(cfg, conn, addr, sys_username):
     # Release the account on that address
 
@@ -83,7 +95,7 @@ def release_account(cfg, conn, addr, sys_username):
 
     with ALLOCDB_LOCK:
         alloc_engine = AllocEngine(cfg.get_alloc_file())
-        alloc_engine.release_account(client_ip, sys_username)
+        alloc_engine.release_one_account(client_ip, sys_username)
 
 def handle_connection(cfg, conn, addr):
     try:
@@ -126,7 +138,7 @@ def client_exchange(cfg, conn, addr):
                 raise TimeoutError("Client took too long to respond")
 
         # The space is intentional; there should be a space between
-        # the REQUEST command and the username
+        # the command and the username
         if str_data.startswith(REQUEST_COMMAND + " "):
             sys_username = str_data[len(REQUEST_COMMAND) + 1:]
 
@@ -138,6 +150,14 @@ def client_exchange(cfg, conn, addr):
                 allocate_account(cfg, conn, addr, sys_username)
             elif validity.is_valid_system_username(sys_username.strip()):
                 allocate_account(cfg, conn, addr, sys_username.strip())
+
+        elif str_data.startswith(RENEW_COMMAND + " "):
+            sys_username = str_data[len(REQUEST_COMMAND) + 1:]
+
+            if validity.is_valid_system_username(sys_username):
+                renew_account(cfg, conn, addr, sys_username)
+            elif validity.is_valid_system_username(sys_username.strip()):
+                renew_account(cfg, conn, add, sys_username.strip())
 
         elif str_data.startswith(RELEASE_COMMAND + " "):
             sys_username = str_data[len(RELEASE_COMMAND) + 1:]

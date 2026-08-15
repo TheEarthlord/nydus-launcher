@@ -7,11 +7,13 @@ CLIENT_CONFIG_FILE = "/etc/nydus/nydus-client.conf"
 
 SERVERIPADDR = "ServerIpAddr"
 PORT = "Port"
+RENEWALPERIOD = "RenewalPeriod"
 CACHAINFILE = "CaChainFile"
-CLIENT_PARNAMES = [SERVERIPADDR, PORT, CACHAINFILE]
+CLIENT_PARNAMES = [SERVERIPADDR, PORT, RENEWALPERIOD, CACHAINFILE]
 CLIENT_DEFCONFIG = {
     SERVERIPADDR: "192.168.1.1",
     PORT: "2011",
+    RENEWALPERIOD: "15",
     CACHAINFILE: "nydus-ca.crt",
 }
 
@@ -20,6 +22,7 @@ CLIENT_DEFCONFIG = {
 CLIENT_VARNAMES = {
     SERVERIPADDR: "server_ip",
     PORT: "port",
+    RENEWALPERIOD: "renewal_period",
     CACHAINFILE: "ca_chain",
 }
 
@@ -38,6 +41,9 @@ class ClientConfig(Config):
         if not validity.is_valid_port(self.port):
             raise ValueError("Value for {} is not a valid port: {}".format(PORT, self.port))
 
+        if not validity.is_positive_integer(self.renewal_period):
+            raise ValueError("Value for {} is not a valid period in minutes: {}".format(RENEWALPERIOD, self.renewal_period))
+
         if not validity.is_valid_file(self.ca_chain):
             raise ValueError("Value for {} is not a file, cannot be found, or cannot be read: {}".format(CACHAINFILE, self.ca_chain))
 
@@ -49,6 +55,12 @@ class ClientConfig(Config):
         # but it'll be a string from reading the config
         # file, so we convert it.
         return int(self.port)
+
+    def get_renewal_period(self):
+        # Renewal period needs to be in int form for most uses,
+        # but it'll be a string from reading the config file,
+        # so we convert it.
+        return int(self.renewal_period)
 
     def get_ca_chain(self):
         return self.ca_chain

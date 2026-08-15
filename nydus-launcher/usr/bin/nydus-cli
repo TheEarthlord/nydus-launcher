@@ -17,10 +17,10 @@ VIEW = "view"
 VIEW_UUID = "view-uuid"
 VIEW_IP = "view-ip"
 ALLOC = "alloc"
+RENEW_UUID = "renew-uuid"
 RELEASE_UUID = "release-uuid"
-RELEASE_IP = "release-ip"
-RESERVE_UUID = "reserve-uuid"
-UNRESERVE_UUID = "unreserve-uuid"
+LOCK_UUID = "lock-uuid"
+UNLOCK_UUID = "unlock-uuid"
 UUID_SHOW = "uuid-show"
 CLEANUP = "cleanup"
 HELP = "help"
@@ -34,10 +34,10 @@ COMMANDS = [
     VIEW_UUID,
     VIEW_IP,
     ALLOC,
+    RENEW_UUID,
     RELEASE_UUID,
-    RELEASE_IP,
-    RESERVE_UUID,
-    UNRESERVE_UUID,
+    LOCK_UUID,
+    UNLOCK_UUID,
     UUID_SHOW,
     CLEANUP,
     CREATE,
@@ -56,15 +56,15 @@ SIMPLE_COMMANDS = [
 UUID_COMMANDS = [
     SUMMARY_UUID,
     VIEW_UUID,
+    RENEW_UUID,
     RELEASE_UUID,
-    RESERVE_UUID,
-    UNRESERVE_UUID,
+    LOCK_UUID,
+    UNLOCK_UUID,
 ]
 
 IP_COMMANDS = [
     SUMMARY_IP,
     VIEW_IP,
-    RELEASE_IP,
 ]
 
 IP_USER_UUID_COMMANDS = [
@@ -202,22 +202,16 @@ def cli_main(cfg):
         client_username = data[1]
         uuid = data[2]
         allocengine.allocate_uuid(uuid, client_ip, client_username)
+    elif command == RENEW_UUID:
+        allocengine.renew_uuid(data)
     elif command == RELEASE_UUID:
-        allocengine.release_account_uuid(data)
-    elif command == RELEASE_IP:
-        allocengine.release_account_ip(data)
-    elif command == RESERVE_UUID:
-        allocengine.reserve_uuid(data)
-    elif command == UNRESERVE_UUID:
-        allocengine.unreserve_uuid(data)
+        allocengine.release_uuid(data)
+    elif command == LOCK_UUID:
+        allocengine.lock_uuid(data)
+    elif command == UNLOCK_UUID:
+        allocengine.unlock_uuid(data)
     elif command == UUID_SHOW:
         print(allocengine.uuid_show())
-    elif command == CREATE:
-        app = netauth.create_msal_app(cfg.get_msal_cid())
-        alloc_utils.initialise_accounts(cfg, app)
-    elif command == CLEANUP:
-        app = netauth.create_msal_app(cfg.get_msal_cid())
-        alloc_utils.cleanup(cfg, app)
     elif command == HELP:
         cli_help()
 

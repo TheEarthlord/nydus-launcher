@@ -10,11 +10,11 @@ PORT = "Port"
 CERTFILE = "CertFile"
 CERTPRIVKEY = "CertPrivKey"
 MCVERSION = "McVersion"
+ALLOCTIMEOUT = "AllocTimeout"
 BROWSERUID = "BrowserUid"
 MSALCID = "MSALClientId"
 ALLOCFILE = "AllocFile"
 ACCOUNTSFILE = "AccountsFile"
-ALLOCTIMEOUT = "AllocTimeout"
 SERVER_PARNAMES = [
     IPADDR, 
     PORT,
@@ -34,7 +34,7 @@ SERVER_DEFCONFIG = {
     CERTFILE: "/etc/nydus/nydus-server.crt",
     CERTPRIVKEY: "/etc/nydus/nydus-server.key",
     MCVERSION: "1.20.6",
-    ALLOCTIMEOUT: "9",
+    ALLOCTIMEOUT: "60",
     BROWSERUID: "1000",
     MSALCID: "1ab23456-7890-1c2d-e3fg-45h6789ijk01",
     ALLOCFILE: "/etc/nydus/nydus-alloc.csv",
@@ -112,7 +112,7 @@ class ServerConfig(Config):
         return self.mc_version
 
     def get_alloc_timeout(self):
-        # Number of hours until account allocation expiry
+        # Number of minutes until account allocation expiry
         # will need to be in integer form for most uses,
         # but it'll be a string from reading the config
         # file, so we convert it.
