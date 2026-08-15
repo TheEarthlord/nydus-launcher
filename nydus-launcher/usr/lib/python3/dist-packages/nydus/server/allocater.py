@@ -74,6 +74,7 @@ FIELDS = [
     "client_ip",
     "client_username",
     "alloc_time",
+    "renewal_time",
     "ms_username",
     "msal_token",
     "msal_expiry",
@@ -121,9 +122,9 @@ assert len(SUMMARY_FIELDS) == len(SUMMARY_PADDINGS),\
 """
 Represents one line of the account allocation
 database file.
-The alloc_time and token_time attributes store
-datetime objects, but you should pass a string, not a datetime,
-to the constructor for those fields.
+The token_time attributes store datetime objects, but you should pass a
+string, not a datetime, to the constructor for those fields.
+alloc_time and renewal_time store strings.
 """
 class AllocAccount:
 
@@ -137,7 +138,7 @@ class AllocAccount:
     AllocAccount.create_from_aat()
     """
     def __init__(self, locked, client_ip, client_username, alloc_time,
-            ms_username, msal_token, msal_expiry, xboxlive_token,
+            renewal_time, ms_username, msal_token, msal_expiry, xboxlive_token,
             xboxlive_expiry, xsts_token, xsts_expiry, xsts_hash,
             mc_token, mc_expiry, mc_username, mc_uuid):
 
@@ -145,6 +146,7 @@ class AllocAccount:
         self.set_client_ip(client_ip)
         self.set_client_username(client_username)
         self.set_alloc_time(alloc_time)
+        self.set_renewal_time(renewal_time)
 
         # AccessTokens need to be given a datetime as their
         # second arg, so we convert them here.
@@ -184,11 +186,11 @@ class AllocAccount:
     Note that even though you pass in an AccountAuthTokens,
     a new one will be created due to the nature of the AllocAccount
     constructor which is called internally.
-    Remember client_ip, client_username, and alloc_time can be empty
-    strings, and they should be if the database file is being created
+    Remember client_ip, client_username, alloc_time, and renewal_time can be
+    empty strings, and they should be if the database file is being created
     from scratch.
     """
-    def create_from_aat(locked, client_ip, client_username, alloc_time, aat):
+    def create_from_aat(locked, client_ip, client_username, alloc_time, renewal_time, aat):
 
         if not isinstance(aat, AccountAuthTokens):
             raise TypeError("To create an AllocAccount using AccountAuthTokens, an AccountAuthTokens instance must be provided. Instead, {} was given.".format(type(aat)))
@@ -198,6 +200,7 @@ class AllocAccount:
             client_ip,
             client_username,
             alloc_time,
+            renewal_time,
             aat.get_microsoft_username(),
             aat.get_msal_token().get_token(),
             aat.get_msal_token().get_expiry(),
@@ -321,6 +324,7 @@ class AllocAccount:
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
+            self.get_renewal_time(),
             self.get_account_auth_tokens().copy(),
         )
 
@@ -351,6 +355,32 @@ class AllocAccount:
         self.set_client_ip(client_ip)
         self.set_client_username(client_username)
         self.set_alloc_time(now_str)
+        self.set_renewal_time(now_str)
+        return True
+
+    """
+    Once a user has an account allocated, they need to periodically request
+    renewal to keep the allocation.
+    Returns True if updating the renewal time was successful, False otherwise.
+    Note "successful" doesn't refer to writing the change to the allocation
+    database, just to setting the renewal time in program memory.
+    Renewal does not affect alloc time or the IP or username of the allocation.
+    """
+    def renew(self):
+
+        if not self.is_allocated():
+            log_server("Tried to renew account {} with uuid {}, but it was not allocated.".format(\
+                    self.get_ms_username(), self.get_mc_uuid()))
+            return False
+
+        if self.is_locked():
+            log_server("Tried to renew account {} with uuid {} for IP {} and username {}, but it was locked".format(\
+                    self.get_ms_username(), self.get_mc_uuid(), self.get_client_ip(), self.get_client_username()))
+            return False
+
+        now = datetime.datetime.now()
+        now_str = now.strftime(TIME_FORMAT)
+        self.set_renewal_time(now_str)
         return True
 
     """
@@ -364,6 +394,7 @@ class AllocAccount:
         self.set_client_ip("")
         self.set_client_username("")
         self.set_alloc_time("")
+        self.set_renewal_time("")
         return True
 
     """
@@ -407,23 +438,23 @@ class AllocAccount:
         self.aat.set_minecraft_account(new_mc_account)
 
     """
-    alloc_timeout: positive int, the number of minutes after which an account
-        should be considered expired.
-    Returns True if the account is allocated and has been allocated
-    for longer than the alloc timeout.
+    alloc_timeout: positive int, number of minutes. When an account is
+        allocated but has not been renewed for longer than this timeout,
+        the allocation will be considered expired and the account will
+        be released.
+    Returns True if the account is allocated and has not been renewed for
+    longer than the alloc timeout.
     Otherwise, return False (including if the account is not allocated,
     or is locked)
     """
-    # TODO handling of alloc timeout doesn't seem to have been
-    # done properly here. We really need to turn it into a datetime
-    # to compare properly
     def alloc_expired(self, alloc_timeout):
 
         if self.is_locked():
             return False
         now = datetime.datetime.now()
+        timeout_period = datetime.timedelta(minutes=alloc_timeout)
         if self.get_alloc_time():
-            if now - self.get_alloc_time() > alloc_timeout:
+            if now - self.get_renewal_time() > timeout_period:
                 return True
         return False
 
@@ -491,6 +522,14 @@ class AllocAccount:
         else:
             raise ValueError("Alloc time value is not a valid timestamp: {}".format(alloc_time))
 
+    def set_renewal_time(self, renewal_time):
+        if renewal_time == "":
+            self.renewal_time = renewal_time
+        elif validity.is_valid_str_timestamp(renewal_time):
+            self.renewal_time = datetime.datetime.strptime(renewal_time, TIME_FORMAT)
+        else:
+            raise ValueError("Renewal time value is not a valid timestamp: {}".format(renewal_time))
+
     def set_account_auth_tokens(self, aat):
         if isinstance(aat, AccountAuthTokens):
             self.aat = aat
@@ -511,6 +550,23 @@ class AllocAccount:
 
     def get_alloc_time(self):
         return self.alloc_time
+
+    """
+    The usual get_alloc_time returns a string, which is what is stored
+    internally. This method returns a datetime.
+    """
+    def get_alloc_datetime(self):
+        return datetime.datetime.strptime(self.alloc_time, TIME_FORMAT)
+
+    def get_renewal_time(self):
+        return self.renewal_time
+
+    """
+    The usual get_renewal_time returns a string, which is what is stored
+    internally. This method returns a datetime.
+    """
+    def get_renewal_datetime(self):
+        return datetime.datetime.strptime(self.renewal_time, TIME_FORMAT)
 
     def get_account_auth_tokens(self):
         return self.aat
@@ -589,6 +645,7 @@ class AllocAccount:
             self.get_client_ip(),
             self.get_client_username(),
             self.get_alloc_time(),
+            self.get_renewal_time(),
             self.get_ms_username(),
             self.get_msal_token(),
             self.get_msal_expiry(),
@@ -781,11 +838,45 @@ class AllocEngine:
                 self.accounts.append(acc)
 
     """
-    If an unallocated account is found, marks it allocated and
-    returns the object representing it.
-    If no unallocated account is found, returns None.
-    
-    Always deallocates all accounts currently allocated to this client IP
+    Allocation, renewal, and releasing each affect only one account at a time.
+    Although it is intended that no IP/username combination should ever have
+    more than one account allocated to them at a time, we use the choice
+    of the oldest one to break ties in case such a situation ever appears.
+    This function returns the allocation held by the given IP and username
+    which was first allocated longest ago.
+    Returns None if there are no existing allocations.
+    """
+    def get_oldest_allocation(self, client_ip, client_username):
+
+        if not validity.is_valid_ipaddr(client_ip):
+            raise ValueError("Client IP was not a valid IP address: {}".format(client_ip))
+
+        if not validity.is_valid_system_username(client_username):
+            raise ValueError("Client username was not a valid system username: {}".format(client_username))
+
+        # Look for if this IP/username have allocations already
+        existing_allocs = [acc for acc in self.accounts if\
+                (acc.is_allocated() and acc.get_client_ip() == client_ip\
+                 and acc.get_client_username() == client_username)]
+
+        oldest = None
+
+        if existing_allocs:
+            oldest = existing_allocs[0]
+            for acc in existing_allocs[1:]:
+                if acc.get_alloc_datetime() < oldest.get_alloc_datetime():
+                    oldest = acc
+
+        return oldest
+
+    """
+    If the given IP/username combination do not have an allocated account
+    already, look for an unallocated account. If we can find an unallocated
+    account, mark it allocated and return the object representing it. If we
+    cannot find an unallocated account, return None.
+    If the given IP/username combination have an account(s) allocated to
+    them already, return the object representing the account which was
+    allocated longest ago, and update that account's renewal time to now.
     """
     def allocate_one_account(self, client_ip, client_username):
 
@@ -798,95 +889,76 @@ class AllocEngine:
         if client_username == "root":
             raise ValueError("Will not allocate Minecraft accounts to root.")
 
-        # Release everything currently allocated to this client
-        for acc in self.accounts:
-            if acc.is_allocated() and acc.get_client_ip() == client_ip and acc.get_client_username() == client_username:
+        oldest = self.get_oldest_allocation(client_ip, client_username)
+
+        if oldest:
+            result = oldest.renew()
+            if result:
+                self.write_changes()
                 
-                result = acc.release()
-                
-                if result:
-                    log_server("Released account {} which was allocated to IP {} because IP {} has requested a new account".format(\
-                            acc.get_ms_username(), client_ip, client_ip))
+                log_server("Renewing account {} for IP {} and username {} since they requested an allocation.".format(\
+                        oldest.get_ms_username(), oldest.get_client_ip(), oldest.get_client_username()))
+                return oldest
+            
+        else:
+            # The IP/username has no existing allocations
+            for acc in self.accounts:
+                if not acc.is_allocated():
+                    result = acc.allocate(client_ip, client_username)
 
-        for acc in self.accounts:
-            if not acc.is_allocated():
-                result = acc.allocate(client_ip, client_username)
+                    if result:
+                        self.write_changes()
 
-                if result:
-                    self.write_changes()
+                        log_server("Allocated account {} to IP {} and username {}".format(\
+                                acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username()))
 
-                    log_server("Allocated account {} to IP {} and username {} because an account was requested by IP {}".format(\
-                            acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), client_ip))
-
-                    return acc
+                        return acc
         return None
 
     """
-    Finds all accounts allocated to both the given client IP
-    and the given username, and releases them.
+    Renews one account allocated to both the given client IP and the given
+    username. If the combination has more than one account allocated, renew
+    the one which was allocated longest ago.
     """
-    def release_account(self, client_ip, client_username):
+    def renew_one_account(self, client_ip, client_username):
         if not validity.is_valid_ipaddr(client_ip):
             raise ValueError("Not a valid IP address: {}".format(client_ip))
 
         if not validity.is_valid_system_username(client_username):
             raise ValueError("Client username was not a valid system username: {}".format(client_username))
 
-        to_release = []
-        for acc in self.accounts:
-            if acc.is_allocated():
-                if acc.get_client_ip() == client_ip:
-                    if acc.get_client_username() == client_username:
-                        to_release.append(acc)
+        oldest = self.get_oldest_allocation(client_ip, client_username)
 
-        for acc in to_release:
-            result = acc.release()
+        if oldest:
+            result = oldest.renew()
             if result:
-                log_server("Released account {}; release of accounts allocated to IP {} and username {} was requested".format(\
-                        acc.get_ms_username(), client_ip, client_username))
+                log_server("Renewed account {}; renewal of an account allocated to IP {} and username {} was requested".format(\
+                        oldest.get_ms_username(), client_ip, client_username))
 
         self.write_changes()
 
     """
-    Finds account by uuid
-    If the account is found and currently allocated, releases it
-    Note that if (somehow) two lines have the same account uuid,
-    both will be released.
+    Releases one account allocated to both the given client IP and the given
+    username. If they have more than one account allocated, release the one
+    which was allocated longest ago.
     """
-    def release_account_uuid(self, uuid):
-        if not validity.is_valid_minecraft_uuid(uuid):
-            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
-
-        to_release = [acc for acc in self.accounts\
-                if acc.is_allocated() and acc.get_mc_uuid() == uuid]
-
-        for acc in to_release:
-            result = acc.release()
-            if result:
-                log_server("Released account {}; release of account with uuid {} was requested".format(\
-                        acc.get_ms_username(), uuid))
-
-        self.write_changes()
-
-    """
-    Finds all accounts allocated to the given client IP
-    and releases them.
-    """
-    def release_account_ip(self, client_ip):
+    def release_one_account(self, client_ip, client_username):
         if not validity.is_valid_ipaddr(client_ip):
             raise ValueError("Not a valid IP address: {}".format(client_ip))
 
-        to_release = [acc for acc in self.accounts \
-                if acc.is_allocated() and acc.get_client_ip() == client_ip]
+        if not validity.is_valid_system_username(client_username):
+            raise ValueError("Client username was not a valid system username: {}".format(client_username))
 
-        for acc in to_release:
-            result = acc.release()
+        oldest = self.get_oldest_allocation(client_ip, client_username)
+
+        if oldest:
+            result = oldest.release()
             if result:
-                log_server("Released account {}; release of accounts allocated to IP {} was requested".format(\
-                        acc.get_ms_username(), client_ip))
+                log_server("Released account {}; release of an account allocated to IP {} and username {} was requested".format(\
+                        oldest.get_ms_username(), client_ip, client_username))
 
         self.write_changes()
-    
+
     """
     Finds an account (or all accounts if there are more than one) of a specific
     uuid, and allocates them to the given client IP address and system username
@@ -910,6 +982,27 @@ class AllocEngine:
             if result:
                 log_server("Allocated account {} to IP {} and username {}; an allocation was requested for uuid {}".format(\
                         acc.get_ms_username(), acc.get_client_ip(), acc.get_client_username(), uuid))
+
+        self.write_changes()
+
+    """
+    Finds account by uuid
+    If the account is found and currently allocated, releases it
+    Note that if (somehow) two lines have the same account uuid,
+    both will be released.
+    """
+    def release_account_uuid(self, uuid):
+        if not validity.is_valid_minecraft_uuid(uuid):
+            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
+
+        to_release = [acc for acc in self.accounts\
+                if acc.is_allocated() and acc.get_mc_uuid() == uuid]
+
+        for acc in to_release:
+            result = acc.release()
+            if result:
+                log_server("Released account {}; release of account with uuid {} was requested".format(\
+                        acc.get_ms_username(), uuid))
 
         self.write_changes()
 
@@ -972,34 +1065,7 @@ class AllocEngine:
                 raise TypeError("The aat list given to create_db must contain only AccountAuthTokens, but found a {}".format(type(elem)))
 
         for aat in aat_list:
-            self.accounts.append(AllocAccount.create_from_aat("", "", "", "", aat))
-
-        self.write_changes()
-
-
-    """
-    aat_list: a list of AccountAuthTokens instances
-    This method is similar to create_db, but functions when accounts
-    were found in the allocation db file. It will create a new
-    allocation db entry for each account represented by the AccountAuthTokens
-    instances given, and append those to the existing ones from
-    the db file, then write the whole resulting account set back
-    into the file.
-    This method is intended for situations when authenticating some
-    accounts fails initially so the alloc db file is created without
-    them, but they are successfully authenticated later and need
-    to be added to the roster of available accounts.
-    """
-    def extend_db(self, aat_list):
-        if not isinstance(aat_list, list):
-            raise TypeError("Must pass a list to extend_db method. Instead, got a {}".format(type(aat_list)))
-
-        for elem in aat_list:
-            if not isinstance(elem, AccountAuthTokens):
-                raise TypeError("The aat list given to extend_db must contain only AccountAuthTokens, but found a {}".format(type(elem)))
-
-        for aat in aat_list:
-            self.accounts.append(AllocAccount.create_from_aat("", "", "", "", aat))
+            self.accounts.append(AllocAccount.create_from_aat("", "", "", "", "", aat))
 
         self.write_changes()
 
@@ -1012,7 +1078,7 @@ class AllocEngine:
             if acc.alloc_expired(alloc_timeout) and not acc.is_locked():
                 result = acc.release()
                 if result:
-                    log_server("Released account {}; allocation expired".format(\
+                    log_server("Released account {}; allocation had not been renewed recently".format(\
                             acc.get_ms_username()))
 
 
