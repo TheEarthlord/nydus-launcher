@@ -35,6 +35,7 @@ ALLOC_DCHAR = ":"
 ALLOC_DELIMS = 3
 
 REQUEST_COMMAND = "REQUEST"
+RENEW_COMMAND = "RENEW"
 RELEASE_COMMAND = "RELEASE"
 
 NETENC="utf-8"
@@ -73,6 +74,21 @@ def watch_for_minecraft(screen, window):
         Gtk.main_iteration()
         Gtk.main_quit()
 
+
+"""
+While Minecraft is running, we need to periodically send a renewal
+signal to the server to keep our account allocation.
+"""
+def renew(ssock):
+    sys_username = utils.get_username()
+    renew_str = "{} {}\n".format(RENEW_COMMAND, sys_username)
+    renew_data = renew_str.encode(encoding=NETENC)
+
+    total_sent = 0
+    while total_sent < len(renew_data):
+        total_send += ssock.send(renew_data[total_sent:])
+
+    ssock.close()
 
 """
 After we close Minecraft, we establish another connection to
@@ -163,6 +179,8 @@ this function downloads files as necessary and starts the game.
 mc_instance: an MCLauncher instance set up with the Minecraft
     version to launch, and also holding the username, uuid, and token
     received from the server.
+Returns the Thread object which has spawned the Minecraft process.
+It will already have started when it is returned.
 """
 def start_game(mc_instance):
 
@@ -185,7 +203,9 @@ def start_game(mc_instance):
 
     dialogs.show_next_dialog()
 
-    mc_instance.launch()
+    mc_thread = threading.Thread(target=mc_instance.launch)
+    mc_thread.start()
+    return mc_thread
 
 
 def client_main(cfg):
@@ -208,7 +228,23 @@ def client_main(cfg):
            
             mc_instance = request(ssock)
 
-    start_game(mc_instance)
+    mc_thread = start_game(mc_instance)
+
+    while mc_thread.is_alive():
+
+        with socket.create_connection((dest_ip, cfg.get_port())) as sock:
+            with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
+
+                renew(ssock)
+
+        # Thread.join's timeout is in seconds. Renewal timeout in the nydus-client
+        # config is specified in minutes, so multiply by 60.
+        renewal_seconds = cfg.get_renewal_period() * 60
+
+        # Either mc_thread finishes and we exit the loop, or we wait for the renewal
+        # period and renew our allocation again.
+        mc_thread.join(timeout=renewal_seconds)
+
 
     # We only proceed when the Minecraft program terminates,
     # at which point we should release the account.
