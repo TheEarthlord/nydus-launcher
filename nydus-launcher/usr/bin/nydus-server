@@ -152,12 +152,12 @@ def client_exchange(cfg, conn, addr):
                 allocate_account(cfg, conn, addr, sys_username.strip())
 
         elif str_data.startswith(RENEW_COMMAND + " "):
-            sys_username = str_data[len(REQUEST_COMMAND) + 1:]
+            sys_username = str_data[len(RENEW_COMMAND) + 1:]
 
             if validity.is_valid_system_username(sys_username):
                 renew_account(cfg, conn, addr, sys_username)
             elif validity.is_valid_system_username(sys_username.strip()):
-                renew_account(cfg, conn, add, sys_username.strip())
+                renew_account(cfg, conn, addr, sys_username.strip())
 
         elif str_data.startswith(RELEASE_COMMAND + " "):
             sys_username = str_data[len(RELEASE_COMMAND) + 1:]

@@ -230,16 +230,16 @@ def client_main(cfg):
 
     mc_thread = start_game(mc_instance)
 
+    # Thread.join's timeout is in seconds. Renewal timeout in the nydus-client
+    # config is specified in minutes, so multiply by 60.
+    renewal_seconds = cfg.get_renewal_period() * 60
+
     while mc_thread.is_alive():
 
         with socket.create_connection((dest_ip, cfg.get_port())) as sock:
             with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
 
                 renew(ssock)
-
-        # Thread.join's timeout is in seconds. Renewal timeout in the nydus-client
-        # config is specified in minutes, so multiply by 60.
-        renewal_seconds = cfg.get_renewal_period() * 60
 
         # Either mc_thread finishes and we exit the loop, or we wait for the renewal
         # period and renew our allocation again.

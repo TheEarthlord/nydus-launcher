@@ -1,3 +1,9 @@
+nydus-launcher (3.0.1) jammy; urgency=medium
+
+  * Bug fixes from 3.0.0
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Sat, 15 Aug 2026 18:26:01 +1000
+
 nydus-launcher (3.0.0) jammy; urgency=medium
 
   * Modified client and server to use a renewal system.
