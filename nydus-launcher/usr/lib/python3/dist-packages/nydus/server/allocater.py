@@ -987,11 +987,32 @@ class AllocEngine:
 
     """
     Finds account by uuid
+    If the account is found and currently allocated, renews it
+    Note that if (somehow) two lines have the same account uuid,
+    both will be renewed.
+    """
+    def renew_uuid(self, uuid):
+        if not validity.is_valid_minecraft_uuid(uuid):
+            raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
+
+        to_renew = [acc for acc in self.accounts\
+                if acc.is_allocated() and acc.get_mc_uuid() == uuid]
+
+        for acc in to_renew:
+            result = acc.renew()
+            if result:
+                log_server("Renewed account {}; renewal of account with uuid {} was requested".format(\
+                        acc.get_ms_username(), uuid))
+
+        self.write_changes()
+
+    """
+    Finds account by uuid
     If the account is found and currently allocated, releases it
     Note that if (somehow) two lines have the same account uuid,
     both will be released.
     """
-    def release_account_uuid(self, uuid):
+    def release_uuid(self, uuid):
         if not validity.is_valid_minecraft_uuid(uuid):
             raise ValueError("Not a valid Minecraft uuid: {}".format(uuid))
 
