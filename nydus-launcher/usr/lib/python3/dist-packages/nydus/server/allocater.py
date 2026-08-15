@@ -407,13 +407,16 @@ class AllocAccount:
         self.aat.set_minecraft_account(new_mc_account)
 
     """
-    alloc_timeout: positive int, the number of hours after which an account
+    alloc_timeout: positive int, the number of minutes after which an account
         should be considered expired.
     Returns True if the account is allocated and has been allocated
     for longer than the alloc timeout.
     Otherwise, return False (including if the account is not allocated,
     or is reserved)
     """
+    # TODO handling of alloc timeout doesn't seem to have been
+    # done properly here. We really need to turn it into a datetime
+    # to compare properly
     def alloc_expired(self, alloc_timeout):
 
         if self.is_reserved():
@@ -1001,7 +1004,7 @@ class AllocEngine:
         self.write_changes()
 
     """
-    alloc_timeout: positive int, number of hours before an account is considered expired.
+    alloc_timeout: positive int, number of minutes before an account is considered expired.
     Releases all the accounts which are past their allocation timeout.
     """
     def release_expired(self, alloc_timeout):

@@ -18,6 +18,7 @@ PORT = "Port"
 CERTFILE = "CertFile"
 CERTPRIVKEY = "CertPrivKey"
 MCVERSION = "McVersion"
+ALLOCTIMEOUT = "AllocTimeout"
 BROWSERUID = "BrowserUid"
 MSALCID = "MSALClientId"
 ALLOCFILE = "AllocFile"
@@ -29,6 +30,7 @@ CLI_PARNAMES = [
     CERTFILE,
     CERTPRIVKEY,
     MCVERSION,
+    ALLOCTIMEOUT,
     BROWSERUID,
     MSALCID,
     ALLOCFILE,
@@ -41,6 +43,7 @@ CLI_DEFCONFIG = {
     CERTFILE: "/etc/nydus/nydus-server.crt",
     CERTPRIVKEY: "/etc/nydus/nydus-server.key",
     MCVERSION: "1.20.6",
+    ALLOCTIMEOUT: "60",
     BROWSERUID: "1000",
     MSALCID: "1ab23456-7890-1c2d-e3fg-45h6789ijk01",
     ALLOCFILE: "/etc/nydus/nydus-alloc.csv",
@@ -53,6 +56,7 @@ CLI_VARNAMES = {
     CERTFILE: "cert_file",
     CERTPRIVKEY: "cert_privkey",
     MCVERSION: "mc_version",
+    ALLOCTIMEOUT: "alloc_timeout",
     BROWSERUID: "browser_uid",
     MSALCID: "msal_cid",
     ALLOCFILE: "alloc_file",
