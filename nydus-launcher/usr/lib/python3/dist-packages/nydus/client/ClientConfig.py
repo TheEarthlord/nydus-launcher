@@ -13,7 +13,7 @@ CLIENT_PARNAMES = [SERVERIPADDR, PORT, RENEWALPERIOD, CACHAINFILE]
 CLIENT_DEFCONFIG = {
     SERVERIPADDR: "192.168.1.1",
     PORT: "2011",
-    RENEWALPERIOD: "15"
+    RENEWALPERIOD: "15",
     CACHAINFILE: "nydus-ca.crt",
 }
 
@@ -22,7 +22,7 @@ CLIENT_DEFCONFIG = {
 CLIENT_VARNAMES = {
     SERVERIPADDR: "server_ip",
     PORT: "port",
-    RENEWALPERIOD: "renewal_period"
+    RENEWALPERIOD: "renewal_period",
     CACHAINFILE: "ca_chain",
 }
 
@@ -56,7 +56,7 @@ class ClientConfig(Config):
         # file, so we convert it.
         return int(self.port)
 
-    def get_renewal_period(self.renewal_period):
+    def get_renewal_period(self):
         # Renewal period needs to be in int form for most uses,
         # but it'll be a string from reading the config file,
         # so we convert it.
