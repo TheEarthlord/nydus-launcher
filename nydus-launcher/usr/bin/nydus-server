@@ -31,6 +31,7 @@ ALLOC_BASE = ALLOC_DCHAR.join(["{}"] * (ALLOC_DELIMS+1)) + "\n"
 REQUEST_COMMAND = "REQUEST"
 RENEW_COMMAND = "RENEW"
 RELEASE_COMMAND = "RELEASE"
+USERS_COMMAND = "USERS"
 
 NETENC = "utf-8"
 
@@ -79,6 +80,27 @@ def allocate_account(cfg, conn, addr, sys_username):
     while sent_data < len(allocation_data):
         sent_data += conn.send(allocation_data[sent_data:])
 
+def show_users(cfg, conn):
+    # Send the client a list of all allocated Minecraft accounts
+    # and corresponding system usernames
+
+    with ALLOCDB_LOCK:
+        alloc_engine = AllocEngine(cfg.get_alloc_file())
+        users_table = alloc_engine.user_show()
+
+    # The default form of the table is formatted with
+    # newlines, but the newline is the "end of message" signal
+    # in Nydus socket communication, so we need to replace
+    # the newline with something else before sending it.
+    
+    users_table = users_table.strip().replace(MSG_END, ALLOC_DCHAR)
+
+    users_data = users_table.encode(encoding=NETENC)
+
+    sent_data = 0
+    while sent_data < len(users_data):
+        sent_data += conn.send(users_data[sent_data:])
+
 def renew_account(cfg, conn, addr, sys_username):
     # Renew the allocation on that address
 
@@ -102,10 +124,15 @@ def handle_connection(cfg, conn, addr):
         client_exchange(cfg, conn, addr)
     except TimeoutError:
         log_server("Client {} took too long to respond".format(addr))
+    except Exception:
+        error_msg = traceback.format_exc()
+        log_server(error_msg)
+    finally:
+        conn.close()
+
 
 def client_exchange(cfg, conn, addr):
 
-    received_count = -1
     str_data = ""
 
     # Don't keep receiving data forever
@@ -115,65 +142,62 @@ def client_exchange(cfg, conn, addr):
     # Cover the whole communication in try/except
     # so that if something goes wrong we can still close the 
     # connection as a signal to the client.
-    try:
-        recv_start = datetime.datetime.now()
-        while len(str_data) < MAXMSG:
+    recv_start = datetime.datetime.now()
+    while len(str_data) < MAXMSG:
 
-            new_data = conn.recv(MAXMSG)
+        new_data = conn.recv(MAXMSG)
 
-            # Empty data means the other end of the connection is closed
-            # We can discard this exchange.
-            if len(new_data) == 0:
-                return
+        # Empty data means the other end of the connection is closed
+        # We can discard this exchange.
+        if len(new_data) == 0:
+            return
 
-            received_count = len(new_data)
-            str_data += new_data.decode(encoding=NETENC)
+        str_data += new_data.decode(encoding=NETENC)
 
-            # A newline character signals end of message
-            if MSG_END in str_data:
-                break
+        # A newline character signals end of message
+        if MSG_END in str_data:
+            break
 
-            now = datetime.datetime.now()
-            if now - recv_start > datetime.timedelta(seconds=SRV_TIMEOUT):
-                raise TimeoutError("Client took too long to respond")
+        now = datetime.datetime.now()
+        if now - recv_start > datetime.timedelta(seconds=SRV_TIMEOUT):
+            raise TimeoutError("Client took too long to respond")
 
-        # The space is intentional; there should be a space between
-        # the command and the username
-        if str_data.startswith(REQUEST_COMMAND + " "):
-            sys_username = str_data[len(REQUEST_COMMAND) + 1:]
+    # The space is intentional; there should be a space between
+    # the command and the username
+    if str_data.startswith(REQUEST_COMMAND + " "):
+        sys_username = str_data[len(REQUEST_COMMAND) + 1:]
 
-            # Check the username exists and is real;
-            # check again with whitespace removed if necessary
-            # If we can't confirm username is real, terminate connection.
+        # Check the username exists and is real;
+        # check again with whitespace removed if necessary
+        # If we can't confirm username is real, terminate connection.
 
-            if validity.is_valid_system_username(sys_username):
-                allocate_account(cfg, conn, addr, sys_username)
-            elif validity.is_valid_system_username(sys_username.strip()):
-                allocate_account(cfg, conn, addr, sys_username.strip())
+        if validity.is_valid_system_username(sys_username):
+            allocate_account(cfg, conn, addr, sys_username)
+        elif validity.is_valid_system_username(sys_username.strip()):
+            allocate_account(cfg, conn, addr, sys_username.strip())
 
-        elif str_data.startswith(RENEW_COMMAND + " "):
-            sys_username = str_data[len(RENEW_COMMAND) + 1:]
+    elif str_data.startswith(RENEW_COMMAND + " "):
+        sys_username = str_data[len(RENEW_COMMAND) + 1:]
 
-            if validity.is_valid_system_username(sys_username):
-                renew_account(cfg, conn, addr, sys_username)
-            elif validity.is_valid_system_username(sys_username.strip()):
-                renew_account(cfg, conn, addr, sys_username.strip())
+        if validity.is_valid_system_username(sys_username):
+            renew_account(cfg, conn, addr, sys_username)
+        elif validity.is_valid_system_username(sys_username.strip()):
+            renew_account(cfg, conn, addr, sys_username.strip())
 
-        elif str_data.startswith(RELEASE_COMMAND + " "):
-            sys_username = str_data[len(RELEASE_COMMAND) + 1:]
-            
-            if validity.is_valid_system_username(sys_username):
-                release_account(cfg, conn, addr, sys_username)
-            elif validity.is_valid_system_username(sys_username.strip()):
-                release_account(cfg, conn, addr, sys_username.strip())
+    elif str_data.startswith(RELEASE_COMMAND + " "):
+        sys_username = str_data[len(RELEASE_COMMAND) + 1:]
+        
+        if validity.is_valid_system_username(sys_username):
+            release_account(cfg, conn, addr, sys_username)
+        elif validity.is_valid_system_username(sys_username.strip()):
+            release_account(cfg, conn, addr, sys_username.strip())
 
-        else:
-            log_server("Invalid connection from host {}".format(addr))
-    except Exception:
-        error_msg = traceback.format_exc()
-        log_server(error_msg)
+    elif str_data.startswith(USERS_COMMAND):
 
-    conn.close()
+        show_users(cfg, conn)
+
+    else:
+        log_server("Invalid connection from host {}".format(addr))
 
 
 def startup():
