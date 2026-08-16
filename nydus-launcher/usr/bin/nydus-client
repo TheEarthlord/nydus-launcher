@@ -127,16 +127,13 @@ def request(ssock):
     # Note you can be kept waiting for data forever
     # by a rogue server. Add some kind of timeout.
     str_data = ""
-    received_count = -1
     while len(str_data) < MAXMSG:
         data = ssock.recv(MAXMSG)
         if len(data) == 0:
             # connection closed
 
             raise ConnectionAbortedError("Server closed connection; failed to get Minecraft account.")
-            return
 
-        received_count = len(data)
         str_data += data.decode(encoding=NETENC)
 
         if MSG_END in str_data:
