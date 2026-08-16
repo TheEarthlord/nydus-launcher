@@ -1,0 +1,37 @@
+.TH "nydus-users" "1" "August 2026" "Christopher Irving" ""
+.SH "NAME"
+.LP 
+nydus\-users \- Client program which requests a list of all allocated Minecraft accounts and the corresponding client usernames from the Nydus Launcher server. 
+.SH "SYNTAX"
+.LP 
+nydus\-users
+.SH "DESCRIPTION"
+.LP 
+When
+.BR nydus-users
+is invoked, it will attempt to contact a Nydus Launcher server and request a list of all the currently allocated
+Minecraft accounts, along with the client usernames to which they are allocated.
+If successful, it will print a table showing which system username has which Minecraft account.
+
+.BR nydus-users
+has no command line arguments. All configuration is done by settings in the configuration
+file for the nydus-client program, that is, the one found at
+.IR /etc/nydus/nydus-client.conf.
+
+See
+.BR nydus-client.conf (5)
+for details on the configuration file's format.
+
+.BR nydus-users
+can only be installed alongside
+.BR nydus-client.
+
+To run a Nydus Launcher server, see
+.BR nydus-server (1).
+
+.SH "SEE ALSO"
+.LP
+.BR nydus-client (1),
+.BR nydus-client.conf (5),
+.BR nydus-server (1),
+.BR nydus-cli (1)

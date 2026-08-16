@@ -54,6 +54,19 @@ Description: Utilities for Nydus Launcher
  This package contains several items which are needed by all elements
  of the Nydus Launcher; Server, Client, and Cli.
 
+Package: nydus-users
+Architecture: any
+Depends: python3, nydus-common, nydus-client
+Description: View user allocations of Nydus Launcher
+  The Nydus Launcher is a custom distributed Minecraft launcher
+ which allows clients to launch Minecraft using access tokens obtained
+ from a central server over the network. This means instances of Minecraft
+ can be launched without the players knowing the credentials of the
+ Minecraft account they are using.
+ This package contains a program which will request from the Nydus server a
+ list of all Minecraft accounts currently allocated and which client users
+ they are allocated to.
+
 Package: nydus-test
 Architecture: any
 Depends: python3, nydus-common, nydus-cli, nydus-client, nydus-server

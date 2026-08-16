@@ -1,0 +1,89 @@
+#!/usr/bin/python3
+
+# Entry point of the nydus-launcher users program.
+# Contacts the server and requests a list of all
+# currently allocated Minecraft accounts and which
+# client user each is allocated to.
+
+import ssl
+import socket
+from nydus.common import nydus_info
+from nydus.users import UsersConfig
+
+# MAXMSG is much larger than in the normal nydus client
+# or nydus server, because we'll need to receive a
+# potentially quite large body of text from the server.
+MAXMSG = 64 * 1024
+
+USERS_COMMAND = "USERS"
+
+NETENC="utf-8"
+
+# We consistently use \n to signal the end of a message
+# across the Nydus launcher, so we need a different character
+# to separate lines of text within the message, since
+# the message we'll be receiving here has separate lines of
+# text, unlike other socket-sent messages in the Nydus
+# launcher suite.
+LINE_DELIM = ":"
+
+MSG_END = "\n"
+
+def startup():
+    cfg = UsersConfig()
+    return cfg
+
+"""
+Once we've established contact with the server, this
+function requests a list of users with allocations and
+their Minecraft usernames.
+Returns the text of the server's response.
+This text is expected to end with \n and contain no
+newlines within it. Instead, the LINE_DELIM character
+will be used to indicate the end of a line.
+"""
+def get_users(ssock):
+    request_str = "{}\n".format(USERS_COMMAND)
+    request_data = request_str.encode(encoding=NETENC)
+
+    total_sent = 0
+    while total_sent < len(request_data):
+        total_sent += ssock.send(request_data[total_sent:])
+
+    str_data = ""
+    while len(str_data) < MAXMSG:
+        data = ssock.recv(MAXMSG)
+        if len(data) == 0:
+            # connection closed
+
+            raise ConnectionAbortedError("Server closed connection; failed to get list of users.")
+        
+        str_data += data.decode(encoding=NETENC)
+
+        if MSG_END in str_data:
+            break
+
+    return str_data
+
+def main():
+    
+    nydus_info.request_version()
+
+    cfg = startup()
+
+    context = ssl.create_default_context()
+
+    # Manually add the self signed CA to the trusted store
+    context.load_verify_locations(cafile=cfg.get_ca_chain())
+
+    dest_ip = cfg.get_server_ip()
+    with socket.create_connection((dest_ip, cfg.get_port())) as sock:
+        with context.wrap_socket(sock, server_hostname=dest_ip) as ssock:
+
+            msg = get_users(ssock)
+
+    lines = msg.split(LINE_DELIM)
+    for line in lines:
+        print(line)
+
+main()
