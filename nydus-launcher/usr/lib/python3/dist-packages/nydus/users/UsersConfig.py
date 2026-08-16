@@ -4,7 +4,7 @@ from nydus.common import validity
 from nydus.common.Config import Config
 
 # Remember this needs to be the same as the client config file
-CLIENT_CONFIG_FILE = "/etc/nydus/nydus-client.conf"
+USERS_CONFIG_FILE = "/etc/nydus/nydus-client.conf"
 
 # Because Users reads from the nydus-client configuration file,
 # there will be configuration items it doesn't need.
@@ -17,8 +17,8 @@ SERVERIPADDR = "ServerIpAddr"
 PORT = "Port"
 RENEWALPERIOD = "RenewalPeriod"
 CACHAINFILE = "CaChainFile"
-CLIENT_PARNAMES = [SERVERIPADDR, PORT, RENEWALPERIOD, CACHAINFILE]
-CLIENT_DEFCONFIG = {
+USERS_PARNAMES = [SERVERIPADDR, PORT, RENEWALPERIOD, CACHAINFILE]
+USERS_DEFCONFIG = {
     SERVERIPADDR: "192.168.1.1",
     PORT: "2011",
     RENEWALPERIOD: "15",
@@ -27,19 +27,19 @@ CLIENT_DEFCONFIG = {
 
 # Maps between the parameter named used in the config file
 # and the attribute name used in the Config class
-CLIENT_VARNAMES = {
+USERS_VARNAMES = {
     SERVERIPADDR: "server_ip",
     PORT: "port",
     RENEWALPERIOD: "renewal_period",
     CACHAINFILE: "ca_chain",
 }
 
-class ClientConfig(Config):
+class UsersConfig(Config):
 
     """
     path: a string, path to the configuration file to read
     """
-    def __init__(self, path=CLIENT_CONFIG_FILE, parnames=CLIENT_PARNAMES, defconfig=CLIENT_DEFCONFIG, varnames=CLIENT_VARNAMES):
+    def __init__(self, path=USERS_CONFIG_FILE, parnames=USERS_PARNAMES, defconfig=USERS_DEFCONFIG, varnames=USERS_VARNAMES):
         super().__init__(path, parnames, defconfig, varnames)
         
     def validate_config(self):

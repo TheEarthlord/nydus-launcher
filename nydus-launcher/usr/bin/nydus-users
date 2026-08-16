@@ -8,7 +8,7 @@
 import ssl
 import socket
 from nydus.common import nydus_info
-from nydus.users import UsersConfig
+from nydus.users.UsersConfig import UsersConfig
 
 # MAXMSG is much larger than in the normal nydus client
 # or nydus server, because we'll need to receive a

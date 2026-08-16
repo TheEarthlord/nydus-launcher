@@ -833,7 +833,7 @@ class AllocEngine:
     """
     def user_show(self):
         outstr = ""
-        outstr += "{}\n".format(AllocAccount.make_uuid_header())
+        outstr += "{}\n".format(AllocAccount.make_user_header())
         accs = [acc for acc in self.accounts if acc.is_allocated()]
         for acc in accs:
             outstr += "{}\n".format(acc.user_show())
