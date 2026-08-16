@@ -7,7 +7,12 @@
 
 import ssl
 import socket
+
 from nydus.common import nydus_info
+from nydus.common.net_constants import DELIM_CHAR
+from nydus.common.net_constants import MSG_END
+from nydus.common.net_constants import NETENC
+from nydus.common.net_constants import USERS_COMMAND
 from nydus.users.UsersConfig import UsersConfig
 
 # MAXMSG is much larger than in the normal nydus client
@@ -15,19 +20,6 @@ from nydus.users.UsersConfig import UsersConfig
 # potentially quite large body of text from the server.
 MAXMSG = 64 * 1024
 
-USERS_COMMAND = "USERS"
-
-NETENC="utf-8"
-
-# We consistently use \n to signal the end of a message
-# across the Nydus launcher, so we need a different character
-# to separate lines of text within the message, since
-# the message we'll be receiving here has separate lines of
-# text, unlike other socket-sent messages in the Nydus
-# launcher suite.
-LINE_DELIM = ":"
-
-MSG_END = "\n"
 
 def startup():
     cfg = UsersConfig()
@@ -39,7 +31,7 @@ function requests a list of users with allocations and
 their Minecraft usernames.
 Returns the text of the server's response.
 This text is expected to end with \n and contain no
-newlines within it. Instead, the LINE_DELIM character
+newlines within it. Instead, the DELIM_CHAR character
 will be used to indicate the end of a line.
 """
 def get_users(ssock):
@@ -82,7 +74,7 @@ def main():
 
             msg = get_users(ssock)
 
-    lines = msg.split(LINE_DELIM)
+    lines = msg.split(DELIM_CHAR)
     for line in lines:
         print(line)
 

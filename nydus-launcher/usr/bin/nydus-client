@@ -24,23 +24,18 @@ from nydus.client import utils
 from nydus.client.ClientConfig import ClientConfig
 from nydus.client.MCLauncher import MCLauncher
 from nydus.common.MCAccount import MCAccount
+from nydus.common.net_constants import ALLOC_DELIMS
+from nydus.common.net_constants import DELIM_CHAR
+from nydus.common.net_constants import MSG_END
+from nydus.common.net_constants import NETENC
+from nydus.common.net_constants import RELEASE_COMMAND
+from nydus.common.net_constants import RENEW_COMMAND
+from nydus.common.net_constants import REQUEST_COMMAND
+
 from nydus.common import nydus_info
 from nydus.common import validity
 
 MAXMSG = 1024
-
-# Delimiter character used in allocation messages
-# and how many of them a complete message will contain
-ALLOC_DCHAR = ":"
-ALLOC_DELIMS = 3
-
-REQUEST_COMMAND = "REQUEST"
-RENEW_COMMAND = "RENEW"
-RELEASE_COMMAND = "RELEASE"
-
-NETENC="utf-8"
-
-MSG_END = "\n"
 
 # A global for storing the numeric part of the Minecraft version we want
 # to launch. Needed because the function which watches new windows
@@ -139,13 +134,13 @@ def request(ssock):
         if MSG_END in str_data:
             break
 
-    num_delims = str_data.count(ALLOC_DCHAR)
+    num_delims = str_data.count(DELIM_CHAR)
     assert num_delims == ALLOC_DELIMS,\
             "Alloc message had incorrect number of delimiters; should have had {} but had {}"\
             .format(ALLOC_DELIMS, num_delims)
 
     str_data = str_data.rstrip(MSG_END)
-    parts = str_data.split(ALLOC_DCHAR)
+    parts = str_data.split(DELIM_CHAR)
 
     ssock.close()
 
