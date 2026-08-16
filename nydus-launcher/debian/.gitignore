@@ -8,5 +8,6 @@ nydus-cli
 nydus-client
 nydus-common
 nydus-test
+nydus-users
 files
 *.substvars
