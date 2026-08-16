@@ -109,15 +109,39 @@ SUMMARY_PADDINGS = [
     33,
 ]
 
+UUID_FIELDS = [
+    "ms_username",
+    "mc_username",
+    "uuid",
+]
+
 UUID_PADDINGS = [
     33,
     33,
     32,
 ]
 
+USER_FIELDS = [
+    "client_username",
+    "mc_username",
+]
+
+USER_PADDINGS = [
+    20,
+    33,
+]
+
 assert len(SUMMARY_FIELDS) == len(SUMMARY_PADDINGS),\
     "Must have exactly one padding size for each summary field. Had {} paddings and {} fields".format(
         len(SUMMARY_PADDINGS), len(SUMMARY_FIELDS))
+
+assert len(UUID_FIELDS) == len(UUID_PADDINGS),\
+    "Must have exactly one padding size for each uuid field. Had {} paddings and  {} fields".format(
+        len(UUID_PADDINGS), len(UUID_FIELDS))
+
+assert len(USER_FIELDS) == len(USER_PADDINGS),\
+    "Must have exactly one padding size for each user field. Had {} paddings and  {} fields".format(
+        len(USER_PADDINGS), len(USER_FIELDS))
 
 """
 Represents one line of the account allocation
@@ -244,13 +268,27 @@ class AllocAccount:
     Does not include a newline on the end
     """
     def make_uuid_header():
-        fields = ["ms-username", "mc-username", "uuid"]
-        assert len(fields) == len(UUID_PADDINGS), "make_uuid_header is misconfigured"
 
         header_blocks = []
-        for i in range(len(fields)):
-            field = fields[i]
+        for i in range(len(UUID_FIELDS)):
+            field = UUID_FIELDS[i]
             padding = UUID_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(field)
+            header_blocks.append(block)
+        outstr = SUMMARY_DELIM.join(header_blocks)
+        return outstr
+
+    """
+    Creates the header line to go in the top of the user view
+    Does not include a newline on the end
+    """
+    def make_user_header():
+
+        header_blocks = []
+        for i in range(len(USER_FIELDS)):
+            field = USER_FIELDS[i]
+            padding = USER_PADDINGS[i]
             formstr = " {:" + str(padding) + "} "
             block = formstr.format(field)
             header_blocks.append(block)
@@ -317,6 +355,32 @@ class AllocAccount:
         outstr = SUMMARY_DELIM.join(summary_blocks)
         return outstr
 
+    """
+    Creates a line of summary data to show corresponding
+    usernames of allocated accounts.
+    Includes client username and Minecraft username.
+    Spaced for easy reading.
+    Does NOT include a newline on the end.
+    """
+    def user_show(self):
+        assert self.is_allocated(), "The username summary should only include allocated accounts, but this {} is not allocated".format(self.ms_username())
+
+        user_blocks = []
+
+        fields = [
+            self.get_client_username(),
+            self.get_mc_username()
+        ]
+
+        for i in range(len(fields)):
+            value = fields[i]
+            padding = USER_PADDINGS[i]
+            formstr = " {:" + str(padding) + "} "
+            block = formstr.format(value)
+            user_blocks.append(block)
+
+        outstr = SUMMARY_DELIM.join(user_blocks)
+        return outstr
 
     def copy(self):
         return AllocAccount(
@@ -762,6 +826,19 @@ class AllocEngine:
             outstr += "{}\n".format(acc.uuid_show())
         return outstr
     
+    """
+    Returns a string containing a summary form of the allocation database
+    that shows only client username and Minecraft username.
+    Only allocated accounts from the attached AllocEngine are included.
+    """
+    def user_show(self):
+        outstr = ""
+        outstr += "{}\n".format(AllocAccount.make_uuid_header())
+        accs = [acc for acc in self.accounts if acc.is_allocated()]
+        for acc in accs:
+            outstr += "{}\n".format(acc.user_show())
+        return outstr
+
     """
     Returns a summary string (like that given by list_to_summary)
     but specifically for all the accounts in the attached AllocEngine

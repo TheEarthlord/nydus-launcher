@@ -22,6 +22,7 @@ RELEASE_UUID = "release-uuid"
 LOCK_UUID = "lock-uuid"
 UNLOCK_UUID = "unlock-uuid"
 UUID_SHOW = "uuid-show"
+USERS = "users"
 CLEANUP = "cleanup"
 HELP = "help"
 CREATE = "create"
@@ -39,6 +40,7 @@ COMMANDS = [
     LOCK_UUID,
     UNLOCK_UUID,
     UUID_SHOW,
+    USERS,
     CLEANUP,
     CREATE,
     HELP,
@@ -49,6 +51,7 @@ SIMPLE_COMMANDS = [
     VIEW,
     CREATE,
     UUID_SHOW,
+    USERS,
     CLEANUP,
     HELP,
 ]
@@ -212,6 +215,8 @@ def cli_main(cfg):
         allocengine.unlock_uuid(data)
     elif command == UUID_SHOW:
         print(allocengine.uuid_show())
+    elif command == USERS:
+        print(allocengine.user_show())
     elif command == HELP:
         cli_help()
 
