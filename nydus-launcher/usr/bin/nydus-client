@@ -37,30 +37,22 @@ from nydus.common import validity
 
 MAXMSG = 1024
 
-# A global for storing the numeric part of the Minecraft version we want
-# to launch. Needed because the function which watches new windows
-# needs to know the Minecraft version we're looking for, but Wnck doesn't
-# allow flexibility in what we pass to it.
-# We don't need a lock protecting this because we right to it only once, 
-# strictly before launching the callback function which reads from it.
-NUMERIC_VERSION = None
-
-
 """
 This function is registered as a callback when Wnck detects
 a new window opening. The function needs to determine
 if the new window is Minecraft, and if so, close Gtk.
+This function accepts 3 arguments because we specified the version
+string as extra data to be passed in when we connected it to
+the window-opened callback.
 screen: the Gtk.Screen instance where the new window was detected
 window: the Gtk.Window instance which is newly detected
+mc_version: string, the Minecraft version we expect to launch
 """
-def watch_for_minecraft(screen, window):
+def watch_for_minecraft(screen, window, mc_version):
 
     title = window.get_name()
 
-    if not NUMERIC_VERSION:
-        raise TypeError("Numeric Minecraft version should have been set before watching for the Minecraft window, but it was '{}'".format(NUMERIC_VERSION))
-
-    if ("Minecraft" in title) and (NUMERIC_VERSION in title):
+    if ("Minecraft" in title) and (mc_version in title):
 
         dialogs.close_all_dialogs()
 
@@ -176,22 +168,20 @@ It will already have started when it is returned.
 """
 def start_game(mc_instance):
 
-    global NUMERIC_VERSION
- 
     dialogs.show_next_dialog()
 
     mc_instance.download_all()
 
     mc_version = mc_instance.get_mc_version()
-    NUMERIC_VERSION = utils.get_version_numbers(mc_version)
+    numeric_version = utils.get_version_numbers(mc_version)
+
     # Begin Wnck watching for the Minecraft window, so we know when
     # info dialog boxes will no longer be needed.
     # When Minecraft's window is detected, Gtk will shut down and
     # all dialog box related elements will exit.
-
     screen = Wnck.Screen.get_default()
     screen.force_update()
-    screen.connect("window-opened", watch_for_minecraft)
+    screen.connect("window-opened", watch_for_minecraft, numeric_version)
 
     dialogs.show_next_dialog()
 
