@@ -53,13 +53,7 @@ def watch_for_minecraft(screen, window, mc_version):
     title = window.get_name()
 
     if ("Minecraft" in title) and (mc_version in title):
-
-        dialogs.close_all_dialogs()
-
-        # Give the Gtk main loop an iteration to process the window closures
-        # before we quit the main loop.
-        Gtk.main_iteration()
-        Gtk.main_quit()
+        dialogs.end_gtk()
 
 
 """
@@ -227,6 +221,12 @@ def client_main(cfg):
         # period and renew our allocation again.
         mc_thread.join(timeout=renewal_seconds)
 
+    # Just in case Gtk shutdown didn't happen properly,
+    # we close it here. This should ensure all extra threads
+    # terminate so release and nydus-client shutdown happens
+    # properly.
+    if Gtk.main_level() > 0:
+        dialogs.end_gtk()
 
     # We only proceed when the Minecraft program terminates,
     # at which point we should release the account.

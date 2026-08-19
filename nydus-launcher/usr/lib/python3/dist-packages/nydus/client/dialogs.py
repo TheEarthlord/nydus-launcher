@@ -136,6 +136,18 @@ def close_all_dialogs():
 
 
 """
+Closes all dialog boxes and ends the Gtk main loop.
+"""
+def end_gtk():
+    close_all_dialogs()
+    # Give the Gtk main loop an iteration to process the window closures
+    # before we quit the main loop.
+    # But don't block if there's nothing to do
+    Gtk.main_iteration_do(False)
+    Gtk.main_quit()
+
+
+"""
 Displays an error dialog box and closes all others that might be open.
 error_diag: string, the message to show in an error window.
 """
