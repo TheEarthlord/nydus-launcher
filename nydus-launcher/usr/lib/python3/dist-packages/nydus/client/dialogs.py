@@ -116,11 +116,13 @@ def show_next_message():
         # If it has a timeout, start the thread which proceeds through
         # timed messages.
         if curr_msg.get_timeout() == 0:
-            DIALOG_WINDOW.props.secondary_text = curr_msg
-            message_idx += 1
+            DIALOG_WINDOW.props.secondary_text = curr_msg.get_text()
 
             if message_idx == 0:
                 DIALOG_WINDOW.show_all()
+
+            message_idx += 1
+
         else:
             timed_diag_thread = threading.Thread(target=show_timed_messages)
             timed_diag_thread.start()
@@ -133,8 +135,7 @@ if we need to show an error dialog box.
 """
 def close_info_dialog():
     with DIAG_LOCK:
-        for i in range(len(MESSAGES)):
-            MESSAGES[i].close()
+        DIALOG_WINDOW.close()
 
 
 """
@@ -203,7 +204,7 @@ def show_timed_messages():
 
             # Else proceed to next message.
             curr_msg = MESSAGES[message_idx]
-            DIALOG_WINDOW.props.secondary_text = curr_msg
+            DIALOG_WINDOW.props.secondary_text = curr_msg.get_text()
             if message_idx == 0:
                 DIALOG_WINDOW.show_all()
 
