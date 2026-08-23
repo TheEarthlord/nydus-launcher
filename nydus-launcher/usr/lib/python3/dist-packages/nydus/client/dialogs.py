@@ -22,21 +22,12 @@ class InfoDialog(Gtk.MessageDialog):
     timeout: nonnegative integer, how many seconds the window should remain visible.
         If 0, the window should remain until the program advances to the next stage.
     """
-    def __init__(self, msg_text, timeout=10):
+    def __init__(self, msg_text):
 
         if not validity.is_nonempty_str(msg_text):
             raise ValueError("Nonempty string must be provided as Window message text. Was given '{}' of type {}".format(msg_text, type(msg_text)))
 
         super().__init__(text=INFO_TITLE, secondary_text=msg_text, image=None)
-
-        if not isinstance(timeout, int) or timeout < 0:
-            raise ValueError("Must be given a non-negative integer as timeout for a TimedInfoDialog. Was given '{}' of type {}".format(timeout, type(timeout)))
-
-        self.timeout = timeout
-
-    def get_timeout(self):
-        return self.timeout
-
 
 """
 Class for displaying error messages if the Nydus Client
@@ -72,27 +63,9 @@ dialog_idx = 0
 # Minecraft take a while to appear on screen.
 # Always use the DIAG_LOCK when opening or closing one of these windows.
 DIALOGS = [
-    InfoDialog("Requesting Minecraft credentials from server...", timeout=0),
-    InfoDialog("Downloading files for Minecraft...", timeout=0),
+    InfoDialog("Requesting Minecraft credentials from server..."),
+    InfoDialog("Downloading files for Minecraft..."),
     InfoDialog("Launching Minecraft..."),
-    InfoDialog("Waiting for the grass to grow..."),
-    InfoDialog("Spreading lava..."),
-    InfoDialog("Making contact with the mothership..."),
-    InfoDialog("Eroding a cliff-face..."),
-    InfoDialog("The seconds are ticking by..."),
-    InfoDialog("Circumnavigating the globe..."),
-    InfoDialog("Crossing the desert on foot..."),
-    InfoDialog("Journeying to the centre of the earth..."),
-    InfoDialog("Watching trees grow..."),
-    InfoDialog("Waiting for the sermon to be over..."),
-    InfoDialog("Singing another chorus..."),
-    InfoDialog("Following Pluto's orbit..."),
-    InfoDialog("Stepping out of the time machine..."),
-    InfoDialog("The elves are fading away..."),
-    InfoDialog("Atlantis rises from the deeps..."),
-    InfoDialog("Watching the years slip by..."),
-    InfoDialog("Imminently expecting Jesus to return..."),
-    InfoDialog("You have reached a state where time has no meaning...", timeout=0),
 ]
 
 """
@@ -111,17 +84,9 @@ def show_next_dialog():
             prev_diag.close()
 
         curr_diag = DIALOGS[dialog_idx]
+        curr_diag.show_all()
 
-        # If the current message does not have a specific timeout,
-        # advance as normal.
-        # If it has a timeout, start the thread which proceeds through
-        # timed messages.
-        if curr_diag.get_timeout() == 0:
-            curr_diag.show_all()
-            dialog_idx += 1
-        else:
-            timed_diag_thread = threading.Thread(target=show_timed_dialogs)
-            timed_diag_thread.start()
+        dialog_idx += 1
 
 
 """
@@ -166,55 +131,3 @@ def show_error_dialog(error_diag):
     close_all_dialogs()
 
     win.show_all()
-
-
-"""
-Called when a series of status dialog boxes with timeouts are due to be shown.
-This function keeps each window open for the right time, then closes it and
-moves on to the next one. Terminates if gtk shuts down, if it's time to stop
-showing dialogs (communicated by dialog_idx being set out of bounds) or
-if we reach a dialog box with no timeout.
-"""
-def show_timed_dialogs():
-    
-    global dialog_idx
-    # We will enter this function directly from
-    # show_next_message which will have detected a
-    # timed message and not shown it yet.
-    # So we show the next message ourselves.
-
-    # We use a while True to make it easy to lock inside
-    # the loop only when needed
-    while True:
-
-        with DIAG_LOCK:
-
-            # If Gtk is no longer running, exit immediately.
-            # The function which exited gtk will have already closed any current
-            # messages.
-            if Gtk.main_level() < 1:
-                break
-
-            # If we've exceeded the list of messages, exit immediately
-            if dialog_idx >= len(DIALOGS):
-                break
-
-            # Else proceed to next message.
-            curr_diag = DIALOGS[dialog_idx]
-            curr_diag.show_all()
-            if dialog_idx > 0:
-                DIALOGS[dialog_idx-1].close()
-
-            timeout = curr_diag.get_timeout()
-
-            dialog_idx += 1
-
-
-        # Outside lock so timeout sleeping will not
-        # occupy the lock.
-        if timeout > 0:
-            time.sleep(timeout)
-        else:
-            # If timeout <= 0, leave message indefinitely.
-            break
-
