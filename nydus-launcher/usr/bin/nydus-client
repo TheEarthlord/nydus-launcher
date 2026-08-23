@@ -162,7 +162,7 @@ It will already have started when it is returned.
 """
 def start_game(mc_instance):
 
-    dialogs.show_next_dialog()
+    dialogs.show_next_message()
 
     mc_instance.download_all()
 
@@ -177,7 +177,7 @@ def start_game(mc_instance):
     screen.force_update()
     screen.connect("window-opened", watch_for_minecraft, numeric_version)
 
-    dialogs.show_next_dialog()
+    dialogs.show_next_message()
 
     mc_thread = threading.Thread(target=mc_instance.launch)
     mc_thread.start()
@@ -186,7 +186,7 @@ def start_game(mc_instance):
 
 def client_main(cfg):
 
-    dialogs.show_next_dialog()
+    dialogs.show_next_message()
 
     context = ssl.create_default_context()
 
