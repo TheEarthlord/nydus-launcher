@@ -1,3 +1,19 @@
+nydus-launcher (3.2.0) jammy; urgency=medium
+
+  * Cut down to only 3 info messages.
+  * Previously there were several info messages which would show up one after
+    the other while waiting for Minecraft to launch. They were supposed to go
+    away when the Minecraft window appeared, but due to a bug I couldn't
+    solve, sometimes they didn't.
+  * With only the three main info messages and no timed rotation of new ones,
+    even if the Minecraft window detection fails there won't be new windows
+    popping up while you're trying to play. This makes the bug less
+    disruptive.
+  * Old versions of the code with the additional messages have been left in
+    branches.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Sun, 23 Aug 2026 16:46:45 +1000
+
 nydus-launcher (3.1.3) jammy; urgency=medium
 
   * Separated network communication constants into nydus-common
