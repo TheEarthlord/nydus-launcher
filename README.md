@@ -41,12 +41,11 @@ finished playing. The server will only ever allocate an account to
 one client at a time.
 
 The Nydus Launcher is specifically written with the expectation of
-a Ubuntu installation on all machines, where users log into clients
-using SSHFS connections to the server; that is, all users on the clients
-will be visible on the server.
-This is used for things like checking that a request for account is coming
-from a real user, and for additional strategies to detect when an
-allocated Minecraft account is no longer in use and can be deallocated.
+a Ubuntu installation on all machines, in terms of the filesystem
+and where code, logs, and configuration should go.
+It also assumes that all the usernames on the clients are present
+on the server as well. This is useful for checking that requests for
+accounts are coming from real users.
 If your setup is different, the Nydus Launcher will likely require
 modification.
 
@@ -67,7 +66,7 @@ communicate with.
 The nydus-cli package contains a command line interface to modify some
 of the state of the server, in particular to manually edit the account
 allocation database. It is not required for the Nydus Launcher to work,
-but may be useful.
+but may be useful. It can only be installed alongside nydus-server.
 
 The nydus-common package contains code needed by both nydus-server and
 nydus-cli.
@@ -75,6 +74,11 @@ nydus-cli.
 The nydus-client package contains the client portion of the Nydus Launcher,
 which requests a Minecraft account from the server and launches an instance
 of Minecraft. It does not require the nydus-common package to function.
+
+The nydus-users package simply allows viewing of which Minecraft accounts
+are allocated to which system accounts. It must be installed alongside
+nydus-client, and may be useful for finding out which people are playing
+as which Minecraft accounts in a game.
 
 The nydus-test package has a variety of unit tests which it will run using
 other installed Nydus Launcher packages.
