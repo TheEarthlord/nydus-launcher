@@ -1,3 +1,11 @@
+nydus-launcher (3.3.0) jammy; urgency=medium
+
+  * Updated documentation, in-code comments, man pages to describe current
+    function of Nydus Launcher; many descriptions were outdated and did not
+    reflect current behaviour after many changes.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Mon, 14 Sep 2026 13:45:36 +1000
+
 nydus-launcher (3.2.0) jammy; urgency=medium
 
   * Cut down to only 3 info messages.
