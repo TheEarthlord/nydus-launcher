@@ -29,7 +29,7 @@ whitespace either.
 A configuration line without an equals sign will result in an error.
 
 A configuration file need not include every parameter which the Nydus
-program can understand; each paramter has a built in default value
+program can understand; each parameter has a built in default value
 which the program will use if that parameter is not present in the
 configuration file. However, most of these defaults, such as IP
 addresses and location of certificate files, will likely not make
@@ -102,11 +102,22 @@ the right version of OptiFine is installed on the client machine.
 
 .SS AllocTimeout
 .RS 2
-After this many hours, an account allocation is considered 'expired',
-and will be released during the next cleanup regardless of whether
+Once an account is allocated to a client, the client needs to
+periodically send renewal signals to the server to keep the
+allocation. If renewals do not come for too long, the account is
+considered 'expired' and will be released during the next cleanup
+regardless of whether
 .BR nydus-client
-has requested it be released. Must be a positive integer, so the minimum
-allocation timeout period is 1 hour.
+has requested it be released.
+This is the time, in minutes, after which an account will expire
+if it has not been renewed more recently.
+Must be a positive integer.
+How often renewal will be attempted is configured on the client.
+This number should be more than the renewal period configured on
+the client, and for best results should be more than double the
+renewal period; the client should have to fail to renew at
+least twice before an account expires.
+Default value is 60, for expiry after an hour without renewal.
 .RE
 
 .SS BrowserUid

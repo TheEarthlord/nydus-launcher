@@ -29,7 +29,7 @@ whitespace either.
 A configuration line without an equals sign will result in an error.
 
 A configuration file need not include every parameter which the Nydus
-program can understand; each paramter has a built in default value
+program can understand; each parameter has a built in default value
 which the program will use if that parameter is not present in the
 configuration file. However, most of these defaults, such as IP
 addresses and location of certificate files, will likely not make
@@ -60,6 +60,24 @@ is listening for client connections.
 Default is 2011.
 .RE
 
+.SS RenewalPeriod
+.RS 2
+.BR nydus-client
+must send a renewal signal to
+.BR nydus-server
+periodically to keep its Minecraft allocation.
+(The timeout after which an allocation will be released
+is configured on the server).
+This configuration parameter is how often, in minutes,
+.BR nydus-client
+will send a renewal signal.
+Must be a positive integer. Should be much less than the
+timeout period configured on the server; preferably the client
+should have to miss at least 2 renewals before the server will
+release its allocation.
+Default is 15
+.RE
+
 .SS CaChainFile
 .RS 2
 A file containing a certificate chain to be used in establishing
@@ -70,8 +88,8 @@ This certificate chain will ultimately be used as an argument to
 SSLContext.wrap_socket() from Python's ssl library.
 This certificate chain must allow the client to trust the
 certificate offered by
-.BR nydus-server
-; no attempt will be made to access the OS's store
+.BR nydus-server;
+no attempt will be made to access the OS's store
 of trusted certificates.
 .RE
 
