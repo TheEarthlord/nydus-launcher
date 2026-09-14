@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+# Entry point to the nydus-launcher server.
+# Runs as a daemon which clients connect to.
+# Creates threads to allocate accounts.
+# Periodically cleans up account allocations in case a client didn't release.
+
 import datetime
 import random
 import socket
@@ -41,11 +46,6 @@ SRV_TIMEOUT = 5
 CLEANUP_PERIOD = 30 * 60
 CLEANUP_DT = datetime.timedelta(seconds=CLEANUP_PERIOD)
 
-
-# Entry point to the nydus-launcher server.
-# Runs as a daemon which clients connect to.
-# Creates threads to allocate accounts.
-# Periodically cleans up account allocations in case a client didn't release.
 
 def allocate_account(cfg, conn, addr, sys_username):
     # Allocate a Minecraft account to that username

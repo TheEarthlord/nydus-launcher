@@ -1,4 +1,8 @@
 
+# Utilities for authenticating to endpoints over the internet;
+# Microsoft, Xbox, and Minecraft
+# Used in getting and updating access tokens
+
 import datetime
 import multiprocessing
 import os
@@ -24,10 +28,6 @@ SEND_DONE = "LASTCHUNKSENT"
 
 TOO_MANY_REQUESTS = 429
 MC_WAIT_DURATION = 60
-
-# Utilities for authenticating to endpoints over the internet;
-# Microsoft, Xbox, and Minecraft
-# Used in getting and updating access tokens
 
 SCOPES_NEEDED = ["XboxLive.signin"]
 

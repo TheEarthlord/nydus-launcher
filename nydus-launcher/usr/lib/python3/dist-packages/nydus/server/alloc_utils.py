@@ -89,14 +89,10 @@ def read_accounts_file(path):
 
 """
 The master cleanup function.
-Nydus Server runs this every CLEANUP_PERIOD and Nydus Cli
-can run it whenever desired.
+Nydus Server runs this every CLEANUP_PERIOD.
 It renews all authentication tokens which are close to expiring.
 It releases all Minecraft account allocations which have passed the
-allocation timeout.
-For accounts which are still allocated, it checks for whether those client
-IPs are still allocated and those system users are still logged in. If not,
-the relevant Minecraft account is released.
+allocation timeout since their last renewal.
 """
 def cleanup(cfg, app, thread_lock=None):
 
@@ -141,17 +137,6 @@ def cleanup_helper(cfg, app):
 
     renewal_succeeded = renew_tokens(cfg, app, alloc_engine)
     alloc_engine.release_expired(cfg.get_alloc_timeout())
-
-    # "Unused" accounts are detected by looking for users
-    # logged in over SSH. This is a very case-specific way
-    # of detecting whether an allocated account might still
-    # be in use, so we're going to leave it out of the cleanup
-    # process for now.
-    # The automatic account release upon close of Minecraft
-    # works quite well, and combined with the timeout and
-    # ability to manually release things with Nydus Cli,
-    # detecting unused allocations via SSH login seems like
-    # it doesn't add much.
 
     alloc_engine.write_changes()
     return renewal_succeeded

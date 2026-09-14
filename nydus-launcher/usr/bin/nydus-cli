@@ -1,5 +1,17 @@
 #!/usr/bin/python3
 
+# The Nydus Cli provides a command line tool
+# which you use to interact with the server.
+# Primarily this works by modifying the file containing
+# account allocations.
+
+# Nydus Cli reads from the same configuration file
+# as the Nydus server so that it knows where to find
+# the allocation database file.
+# But it doesn't store everything in the config file
+# since only the location of the allocation file needs
+# to be known.
+
 import sys
 from nydus.cli.CliConfig import CliConfig
 from nydus.common import nydus_info
@@ -67,18 +79,6 @@ IP_COMMANDS = [
 IP_USER_UUID_COMMANDS = [
     ALLOC,
 ]
-
-# The Nydus Cli provides a command line tool
-# which you use to interact with the server.
-# Primarily this works by modifying the file containing
-# account allocations.
-
-# Nydus Cli reads from the same configuration file
-# as the Nydus server so that it knows where to find
-# the allocation database file.
-# But it doesn't store everything in the config file
-# since only the location of the allocation file needs
-# to be known.
 
 def cli_help():
     print("""While the Nydus Server is running, it maintains a database of all

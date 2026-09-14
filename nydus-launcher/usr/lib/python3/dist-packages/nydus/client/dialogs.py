@@ -57,10 +57,10 @@ dialog_idx = 0
 
 # The list of status dialog boxes in order, displaying
 # stages in launching Minecraft.
-# Those with timeouts of 0 will persist until the program
-# reaches a new stage. The others swap out every few seconds
-# to reassure the user the program is still running, should
-# Minecraft take a while to appear on screen.
+# By default a dialog box will persist until the program
+# reaches a new stage and manually triggers the next one.
+# You can make a box disappear automatically after a set time
+# by giving it a nonzero timeout value.
 # Always use the DIAG_LOCK when opening or closing one of these windows.
 DIALOGS = [
     InfoDialog("Requesting Minecraft credentials from server..."),
