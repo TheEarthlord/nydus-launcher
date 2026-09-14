@@ -23,9 +23,7 @@ LOCK_UUID = "lock-uuid"
 UNLOCK_UUID = "unlock-uuid"
 UUID_SHOW = "uuid-show"
 USERS = "users"
-CLEANUP = "cleanup"
 HELP = "help"
-CREATE = "create"
 
 COMMANDS = [
     SUMMARY,
@@ -41,18 +39,14 @@ COMMANDS = [
     UNLOCK_UUID,
     UUID_SHOW,
     USERS,
-    CLEANUP,
-    CREATE,
     HELP,
 ]
 
 SIMPLE_COMMANDS = [
     SUMMARY,
     VIEW,
-    CREATE,
     UUID_SHOW,
     USERS,
-    CLEANUP,
     HELP,
 ]
 
@@ -85,24 +79,6 @@ IP_USER_UUID_COMMANDS = [
 # But it doesn't store everything in the config file
 # since only the location of the allocation file needs
 # to be known.
-
-# Operations supported by Nydus Cli:
-# - View allocation database; all accounts or search
-#   for specific attributes.
-# - Manually command the allocation of an account to a
-#   particular IP and system username.
-# - Manually command the release of accounts identified
-#   by uuid.
-# - Manually command the release of accounts identified
-#   by client IP to which they were allocated.
-# - Perform a cleanup of the allocation database, searching
-#   for and releasing accounts which have been allocated too long,
-#   or which are allocated to IPs/users which are no longer
-#   switched on/logged in.
-# - Authenticate a list of accounts and generate a new allocation
-#   database file from that. The list of accounts will likely
-#   be provided as a list of email addresses and then the user
-#   will have to manually authenticate each through a browser via password.
 
 def cli_help():
     print("""While the Nydus Server is running, it maintains a database of all
