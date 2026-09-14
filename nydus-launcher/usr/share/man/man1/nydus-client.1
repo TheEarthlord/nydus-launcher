@@ -5,18 +5,34 @@ nydus\-client \- Client program which requests a Minecraft account from the Nydu
 .SH "SYNTAX"
 .LP 
 nydus\-client
+.LP
+nydus\-client --version
 .SH "DESCRIPTION"
 .LP 
 When
 .BR nydus-client
 is invoked, it will attempt to contact a Nydus Launcher server to be allocated a Minecraft account and access token.
 If successful, it will launch Minecraft using that account.
+While running,
+.BR nydus-client
+will periodically renew its account allocation with the server.
 Once Minecraft is closed,
 .BR nydus-client
 will again attempt to contact the server to release its ownership of the Minecraft account.
 
+The only command line argument
 .BR nydus-client
-has no command line arguments. All configuration is done by settings in the configuration
+accepts is
+.BR --version.
+If given this argument,
+.BR nydus-client
+will simply print the version of the currently installed Nydus Launcher software
+and exit, instead of performing its normal task of requesting an account and
+launching Minecraft.
+
+All configuration of
+.BR nydus-client
+is done by settings in the configuration
 file found at
 .IR /etc/nydus/nydus-client.conf.
 

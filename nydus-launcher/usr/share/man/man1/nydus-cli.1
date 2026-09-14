@@ -5,6 +5,8 @@ nydus\-cli \- Command line interface for Nydus Launcher allocation database
 .SH "SYNTAX"
 .LP 
 nydus\-cli [\fBcommand\fR]
+.LP 
+nydus\-cli --version
 .SH "DESCRIPTION"
 .LP 
 As the Nydus Launcher server operates, it tracks authentication tokens related to the Minecraft accounts it manages, as well as information about
@@ -44,6 +46,14 @@ and
 may not work properly if these configuration parameters
 are not present in the configuration file.
 
+If
+.BR nydus-cli
+is given the argument
+.BR --version,
+then it will simply print the version of the currently installed
+Nydus Launcher software and exit, performing no operations on the
+allocation database.
+
 .SH "COMMANDS"
 
 .SS summary
@@ -52,14 +62,14 @@ View a summary of the allocation database. The summary is designed
 for easy human viewing, with spacing between entries, and only
 showing the allocated client IP, allocated username, allocation time,
 and Microsoft and Minecraft usernames associated with each account.
-Tokens and token-related timestamps are ommitted for readability.
+Tokens and token-related timestamps are omitted for readability.
 .RE
 
 .SS summary-uuid <uuid>
 .RS 2
 View a summary of the allocation database, showing only the
-Minecraft account with specified uuid. (Remember the uuid itself
-will not appear in the summary output).
+Minecraft account with specified uuid. Useful for finding the uuid
+to a particular Minecraft account.
 .RE
 
 .SS summary-ip <client-ip>
@@ -93,44 +103,36 @@ the allocation database; it doesn't cause the client to automatically
 launch Minecraft.
 .RE
 
+.SS renew-uuid <uuid>
+.RS 2
+Renews the allocation of the Minecraft account with the specified
+uuid. Clients who have been allocated an account must renew the
+allocation with the server periodically or the account will be
+deallocated.
+.RE
+
 .SS release-uuid <uuid>
 .RS 2
 Release the Minecraft account with the specified uuid from any
 allocations it may have in the allocation database.
 .RE
 
-.SS release-ip <client-ip>
+.SS lock-uuid <uuid>
 .RS 2
-Release all Minecraft accounts which are allocated to the specified
-client IP address from their allocations.
-.RE
-
-.SS reserve-uuid <uuid>
-.RS 2
-This command reserves the Minecraft account with the specified uuid.
-A reserved account cannot be allocated, and a reserved account can
-only be unreserved by user's command through Nydus Cli.
+This command locks the Minecraft account with the specified uuid.
+A locked account cannot be allocated or deallocated, and a locked account can
+only be unlocked by user's command through Nydus Cli.
 This may be useful if there are machines which need to log into Minecraft
 using some of the accounts the Nydus Launcher is managing, but those machines cannot
 run the Nydus Client to obtain allocations the normal way.
-Reserve enough accounts for those machines to ensure the accounts won't be used
+Lock enough accounts for those machines to ensure the accounts won't be used
 elsewhere at the same time, then log in to Minecraft manually.
 .RE
 
-.SS unreserve-uuid <uuid>
+.SS unlock-uuid <uuid>
 .RS 2
-This command unreserves the Minecraft account with the specified uuid.
-This allows the account to be allocated as normal.
-.RE
-
-.SS cleanup
-.RS 2
-Perform a routine cleanup of the allocation database, as
-.BR nydus-server
-does periodically. Check that all client IPs and system usernames
-to which a Minecraft account is allocated are still active, and
-renew any access tokens associated with the Minecraft accounts
-that are approaching their expiry.
+This command unlocks the Minecraft account with the specified uuid.
+This allows the account to be allocated and released as normal.
 .RE
 
 .SS uuid-show
@@ -139,16 +141,11 @@ View the UUIDs of all accounts, with their corresponding Microsoft usernames
 and Minecraft usernames. This view is designed for human readability.
 .RE
 
-.SS create
+.SS users
 .RS 2
-Create a new allocation database by rereading the file of Minecraft account
-names and manually authenticating them, then overwriting the existing
-allocation database file, as
-.BR nydus-server
-does when it starts up for the first time.
-The location of the file containing a list of Minecraft accounts is found
-by reading from
-.IR /etc/nydus/nydus-server.conf.
+For all Minecraft accounts which are currently allocated, shows the
+Minecraft username and the system username to which is has been allocated.
+Useful for working out which person is playing as which username in a game.
 .RE
 
 .SS help
