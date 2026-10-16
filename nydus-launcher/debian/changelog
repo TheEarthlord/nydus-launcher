@@ -1,3 +1,16 @@
+nydus-launcher (3.4.0) jammy; urgency=medium
+
+  * Back to having many info messages which display in turn on short timeouts
+    while waiting for the Minecraft window to actually appear on your screen.
+    This assures users that the program is working.
+  * The loop which shows new windows checks whether Minecraft has appeared
+    before presenting the next info message, rather than using callbacks to
+    detect Minecraft appearing. This eliminates the old bug at the negligible
+    expense of windows sticking around for a few seconds longer after
+    Minecraft appears.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Fri, 16 Oct 2026 15:59:01 +1100
+
 nydus-launcher (3.3.0) jammy; urgency=medium
 
   * Updated documentation, in-code comments, man pages to describe current
