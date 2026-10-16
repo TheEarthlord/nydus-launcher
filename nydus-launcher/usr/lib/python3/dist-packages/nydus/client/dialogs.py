@@ -155,7 +155,7 @@ def show_next_dialog(mc_version=""):
             curr_diag.show_all()
             dialog_idx += 1
         else:
-            if not is_valid_minecraft_version(mc_version):
+            if not validity.is_valid_minecraft_version(mc_version):
                 raise ValueError("Can only begin showing timed dialogs if we have a valid Minecraft version to detect when the Minecraft window appears. Was given version '{}'".format(mc_version))
 
             timed_diag_thread = threading.Thread(target=show_timed_dialogs, args=(mc_version,))
