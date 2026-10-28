@@ -1,3 +1,10 @@
+nydus-launcher (3.4.1) jammy; urgency=medium
+
+  * Size and contents of MSAL tokens seems to have changed. Updated validity
+    checks to match.
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 28 Oct 2026 16:54:39 +1100
+
 nydus-launcher (3.4.0) jammy; urgency=medium
 
   * Back to having many info messages which display in turn on short timeouts
