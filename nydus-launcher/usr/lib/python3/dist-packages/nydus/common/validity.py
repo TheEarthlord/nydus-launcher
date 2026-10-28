@@ -23,8 +23,8 @@ SYSTEM_UID_MAX = 70000
 # Fairly wide margin of error on lengths
 MC_TOK_MINLEN = 900
 MC_TOK_MAXLEN = 1100
-MSAL_TOK_MINLEN = 1300
-MSAL_TOK_MAXLEN = 1400
+MSAL_TOK_MINLEN = 1500
+MSAL_TOK_MAXLEN = 2000
 XBL_TOK_MINLEN = 1400
 XBL_TOK_MAXLEN = 1700
 XSTS_TOK_MINLEN = 2000
@@ -261,7 +261,7 @@ def is_valid_msal_token(token):
     if len(token) > MSAL_TOK_MAXLEN:
         return False
 
-    if not re.fullmatch(r"[a-zA-Z0-9+=/]+", token):
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", token):
         return False
     return True
 
