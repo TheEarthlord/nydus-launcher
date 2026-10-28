@@ -1,3 +1,9 @@
+nydus-launcher (3.4.2) jammy; urgency=medium
+
+  * Upped maxlen for XboxLive tokens
+
+ -- Christopher Irving <the.earthlord3@gmail.com>  Wed, 28 Oct 2026 17:27:37 +1100
+
 nydus-launcher (3.4.1) jammy; urgency=medium
 
   * Size and contents of MSAL tokens seems to have changed. Updated validity
